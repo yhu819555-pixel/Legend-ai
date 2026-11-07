@@ -14,7 +14,7 @@
 - [x] CI expanded to run backend tests, mobile tests, Expo doctor, Android JS bundle export, native debug APK build and emulator launch smoke test.
 
 ## Pending features
-- [ ] Confirm latest full Project CI run passes all jobs, including native Android APK build.
+- [ ] Confirm latest full Project CI run passes all jobs, including APK build and emulator smoke test.
 - [ ] Download and inspect the debug APK artifact after CI build; physical installation remains to be verified.
 - [ ] Confirm automated Android emulator install/launch smoke test passes; manually verify UI interactions.
 - [ ] Add backend authentication and authorization.
@@ -39,9 +39,9 @@
 - Combined local verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
 - Previous backend CI run: PASS (2 backend tests).
 - Mobile unit tests: PASS (5/5 locally; CI run also reported 5/5 on the first combined run).
-- Expo dependency compatibility / doctor: first CI run detected React Native 0.81.4 vs SDK-required 0.81.5; dependency corrected to 0.81.5 and recheck pending.
-- Android JavaScript bundle export: pending latest corrected CI.
-- Android native APK build / emulator launch / physical installation: CI steps added; latest run pending; physical-device install not yet run.
+- Expo dependency compatibility / doctor: PASS after correcting React Native from 0.81.4 to SDK-required 0.81.5.
+- Android JavaScript bundle export: PASS in corrected CI.
+- Android native prebuild: PASS. Android SDK setup: PASS after removing obsolete default `tools` package. Debug APK build: currently running in CI. Emulator launch and physical-device install: pending.
 - AI streaming / file tools / isolated execution / Git commit: NOT IMPLEMENTED, NOT RUN.
 - No test result is marked PASS until the corresponding CI job or device test completes successfully.
 
