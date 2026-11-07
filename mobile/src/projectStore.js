@@ -24,7 +24,16 @@ export async function readProjects(storage) {
   return projects;
 }
 
-export async function deleteProject(storage, projects, projectId) {\n  if (!Array.isArray(projects)) throw new TypeError("Projects must be an array");\n  const next = projects.filter((project) => project.id !== projectId);\n  await storage.setItem(STORAGE_KEY, JSON.stringify(next));\n  await storage.removeItem("@legend-ai/project-files/" + projectId);\n  await storage.removeItem("@legend-ai/chat/" + projectId);\n  return next;\n}\n\nexport async function saveProject(storage, projects, project) {
+export async function deleteProject(storage, projects, projectId) {
+  if (!Array.isArray(projects)) throw new TypeError("Projects must be an array");
+  const next = projects.filter((project) => project.id !== projectId);
+  await storage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await storage.removeItem("@legend-ai/project-files/" + projectId);
+  await storage.removeItem("@legend-ai/chat/" + projectId);
+  return next;
+}
+
+export async function saveProject(storage, projects, project) {
   if (!Array.isArray(projects)) throw new TypeError("Projects must be an array");
   const next = [project, ...projects];
   await storage.setItem(STORAGE_KEY, JSON.stringify(next));
