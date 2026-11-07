@@ -1,8 +1,8 @@
 function timestampOf(item) {
-  const parsed = item?.createdAt ? Date.parse(item.createdAt) : NaN;
-  if (Number.isFinite(parsed)) return parsed;
   const numericId = Number.parseInt(item?.id, 10);
-  return Number.isFinite(numericId) ? numericId : 0;
+  if (Number.isFinite(numericId)) return numericId;
+  const parsed = Date.parse(item?.updatedAt || item?.createdAt || "");
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function mergeById(localItems, cloudItems, preferNewest = false) {
