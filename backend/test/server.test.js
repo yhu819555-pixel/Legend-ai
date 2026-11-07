@@ -89,6 +89,7 @@ test("chat route sends bounded project files as untrusted developer context", as
     assert.equal(received[0].role, "developer");
     assert.match(received[0].content, /untrusted contents/);
     assert.match(received[0].content, /console\.log/);
+    assert.ok(received[0].content.includes("files.\n\nFILE: main.js"));
     assert.deepEqual(received[1], { role: "user", content: "Explain this project" });
   });
 });
