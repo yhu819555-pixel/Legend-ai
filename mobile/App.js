@@ -38,7 +38,9 @@ export default function App() {
           const merged = await mergeCloudProjectList(localProjects, cloudProjects);
           setProjects(merged);
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          const cloudIds = new Set(cloudProjects.map((project) => project.id));
           for (const project of localProjects) {
+            if (cloudIds.has(project.id)) continue;
             try { await ensureCloudProject(project, AsyncStorage); }
             catch { /* Keep local work available when cloud sync is unavailable. */ }
           }
