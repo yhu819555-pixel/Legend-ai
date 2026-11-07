@@ -21,6 +21,15 @@ export async function createBackup(storage, now = new Date().toISOString()) {
   return { format: "legend-ai-backup", version: 1, exportedAt: now, projects: records };
 }
 
+function hasUniqueIds(items) {
+  const ids = new Set();
+  for (const item of items) {
+    if (ids.has(item.id)) return false;
+    ids.add(item.id);
+  }
+  return true;
+}
+
 function validateBackup(value) {
   if (!value || value.format !== "legend-ai-backup" || value.version !== 1 ||
       !Array.isArray(value.projects) || value.projects.length > 200) {
@@ -38,7 +47,8 @@ function validateBackup(value) {
         project.files.some((file) => !file || typeof file.id !== "string" || !/^[a-zA-Z0-9._-]{1,120}$/.test(file.id) ||
           typeof file.name !== "string" || !file.name.trim() || file.name.length > 100 ||
           /[\/\\]/.test(file.name) || file.name === "." || file.name === ".." ||
-          typeof file.content !== "string" || file.content.length > 6000)) {
+          typeof file.content !== "string" || file.content.length > 6000) ||
+        !hasUniqueIds(project.files)) {
       throw new TypeError("Backup contains invalid project files");
     }
     const total = project.files.reduce((sum, file) => sum + file.name.length + file.content.length, 0);
@@ -46,7 +56,8 @@ function validateBackup(value) {
     if (!Array.isArray(project.messages) || project.messages.length > 500 ||
         project.messages.some((message) => !message || typeof message.id !== "string" || !/^[a-zA-Z0-9._-]{1,120}$/.test(message.id) ||
           !["user", "assistant"].includes(message.role) || typeof message.content !== "string" ||
-          !message.content.trim() || message.content.length > 8000)) {
+          !message.content.trim() || message.content.length > 8000) ||
+        !hasUniqueIds(project.messages)) {
       throw new TypeError("Backup contains invalid chat history");
     }
   }

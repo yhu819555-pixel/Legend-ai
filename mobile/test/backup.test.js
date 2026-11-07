@@ -49,3 +49,27 @@ test("backup restore rejects unsafe paths and unsupported formats", async () => 
     }]
   }), /invalid project files/);
 });
+
+test("backup restore rejects duplicate file and chat message IDs", async () => {
+  const storage = memoryStorage();
+  await assert.rejects(restoreBackup(storage, {
+    format: "legend-ai-backup", version: 1, projects: [{
+      id: "p1", name: "Demo", createdAt: "2026-01-01",
+      files: [
+        { id: "f1", name: "a.txt", content: "one" },
+        { id: "f1", name: "b.txt", content: "two" }
+      ],
+      messages: []
+    }]
+  }), /invalid project files/);
+  await assert.rejects(restoreBackup(storage, {
+    format: "legend-ai-backup", version: 1, projects: [{
+      id: "p1", name: "Demo", createdAt: "2026-01-01",
+      files: [],
+      messages: [
+        { id: "m1", role: "user", content: "one" },
+        { id: "m1", role: "assistant", content: "two" }
+      ]
+    }]
+  }), /invalid chat history/);
+});
