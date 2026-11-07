@@ -60,6 +60,20 @@ jobs:
       - name: Generate native Android project
         working-directory: mobile
         run: npx expo prebuild --platform android --non-interactive
+      - name: Embed JavaScript bundle in debug APK
+        working-directory: mobile
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/build.gradle")
+          content = path.read_text()
+          if "react {" not in content:
+              raise SystemExit("React Gradle configuration not found")
+          if "debuggableVariants = []" not in content:
+              content = content.replace("react {", "react {\\n    // Bundle JS into the APK so it runs without Metro.\\n    debuggableVariants = []", 1)
+          path.write_text(content)
+          print("Configured debug variant to embed its JavaScript bundle")
+          PY
       - name: Build debug APK
         working-directory: mobile/android
         run: ./gradlew assembleDebug
