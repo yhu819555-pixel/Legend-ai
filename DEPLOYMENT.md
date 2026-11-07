@@ -1,50 +1,48 @@
-# Deploy Legend AI backend with HTTPS
+# Deploy Legend AI
 
-This runs the API, PostgreSQL and Caddy reverse proxy. It does not deploy the Android app.
+## Free hosting (Render + Neon)
 
-## Requirements
+This is a hobby/testing deployment path; it does not require a VPS, Linux machine, or custom domain.
 
-- A Linux server with Docker Engine and the Docker Compose plugin.
-- A DNS name (for example, `api.example.com`) with A/AAAA records pointing to this server.
-- Inbound TCP ports 80 and 443 allowed by the server firewall. UDP 443 is optional (HTTP/3).
-- A valid OpenAI API key and an enabled model.
+### Architecture
+- Render Free Web Service runs the Node.js API from `backend/` and provides an HTTPS `onrender.com` URL.
+- Neon Free provides managed PostgreSQL. Choose the Singapore region for a closer APAC location.
+- The repository root `render.yaml` defines the Render Blueprint. It deploys the `feature/mvp-foundation` branch.
 
-## 1. Configure secrets
+### 1. Create the database on Neon
+1. Create a free account at https://neon.com/.
+2. Create a project named `legend-ai`, choosing Singapore (`ap-southeast-1`) if offered.
+3. Open the project's Connect dialog and copy the pooled connection string (hostname contains `-pooler`) for the app.
+4. Keep this connection string private. Do not put it in GitHub or send it in chat.
 
-Copy `.env.example` to `.env` in the repository root. Set `DOMAIN`, a unique long random `POSTGRES_PASSWORD`, a separate random `APP_API_TOKEN`, `AI_API_KEY`, and an enabled `AI_MODEL`. Keep the file private:
+### 2. Deploy the API on Render
+1. Create a free account at https://render.com/.
+2. Connect the GitHub account that owns `yhu819555-pixel/Legend-ai`.
+3. In Render, choose New > Blueprint.
+4. Select `yhu819555-pixel/Legend-ai`, branch `feature/mvp-foundation`, and the root `render.yaml` file.
+5. Render reads the Blueprint and asks for the three secret values:
+   - `DATABASE_URL`: the Neon pooled connection string.
+   - `APP_API_TOKEN`: generate a long random secret (at least 32 random bytes). Keep it private.
+   - `AI_API_KEY`: your OpenAI API key. This is a separate provider credential and may incur API charges.
+6. Confirm the service uses the Free plan, review the resources and any billing prompts, then deploy the Blueprint.
+7. Wait for the deployment to finish. Copy the service's HTTPS URL, for example `https://legend-ai-api.onrender.com`.
+8. Test `https://YOUR-SERVICE.onrender.com/health`; expected JSON is `{"status":"ok","service":"my-ai-agent-api"}`.
 
-```sh
-cp .env.example .env
-chmod 600 .env
-```
+### 3. Connect the Android app
+In Legend AI Settings:
+- Backend URL: the Render HTTPS service URL.
+- Access token: the exact `APP_API_TOKEN` set in Render.
 
-Do not commit `.env`, put the provider key in the APK, or paste credentials into chat. The repository's `.gitignore` excludes local environment files.
+The OpenAI API key stays on Render and must never be entered in the Android app.
 
-## 2. Start the stack
+### Free-tier limitations and safety
+- Render Free web services sleep after 15 minutes without traffic and can take about a minute to wake up. Their filesystem is temporary.
+- Neon Free currently includes 1 GB storage per project and 100 compute-hours per month; compute scales to zero after 5 minutes idle. Monitor usage.
+- Free hosting is suitable for testing/hobby use, not production guarantees. Do not store important data without separate backups.
+- This backend currently uses one shared app token, not per-user accounts or project-level user isolation. Keep the service private to your own testing; do not distribute the token or expose the app as a public multi-user service.
+- OpenAI API usage is billed separately according to the account's API pricing. Free hosting does not mean free AI requests.
+- Do not commit secrets, put them in APKs, or paste them into chat.
 
-After DNS is pointing to the server and ports 80/443 are reachable:
+## VPS deployment
 
-```sh
-docker compose config
-docker compose up -d --build
-docker compose ps
-docker compose logs -f caddy backend
-```
-
-Caddy obtains and renews HTTPS certificates automatically. The backend port 8080 is only exposed inside the private Compose network; public API traffic enters through Caddy on 443. The API health endpoint is `/health`. Database migrations run on backend startup.
-
-## 3. Connect the Android app
-
-In Legend AI Settings, enter `https://YOUR_DOMAIN` and the exact `APP_API_TOKEN` from the private server environment. The OpenAI key remains server-side.
-
-## 4. Backups and operations
-
-The `legend_ai_postgres` volume is persistent storage, not a backup. Configure encrypted off-host PostgreSQL backups and regularly test restoring them. Protect the server, keep Docker and images updated, monitor disk usage and logs, and rotate secrets if they are exposed.
-
-## Important MVP security limits
-
-- The backend currently uses one shared app token. It is not per-user identity, account isolation or token lifecycle management. Do not use this as a public multi-user service.
-- Cloud project APIs and mobile sync are implemented, but require a live configured server to operate.
-- AI calls are not considered live-tested until a real request succeeds with the configured provider key and model.
-- AI can inspect project files; safe file writes, isolated command execution, automated repair and Git commits are not enabled. They require an isolated workspace and explicit Git authorization.
-- A passing CI build does not replace installation and interaction tests on a physical Android device.
+The Docker-based VPS setup remains available for later, if you obtain a Linux server and domain. It is not required for the free Render + Neon path.

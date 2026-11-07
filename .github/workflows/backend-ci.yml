@@ -12,6 +12,7 @@ on:
       - "Caddyfile"
       - ".env.example"
       - "DEPLOYMENT.md"
+      - "render.yaml"
   pull_request:
     paths:
       - "backend/**"
@@ -21,6 +22,7 @@ on:
       - "Caddyfile"
       - ".env.example"
       - "DEPLOYMENT.md"
+      - "render.yaml"
 
 concurrency:
   group: project-ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -40,6 +42,9 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: npm test
+      - name: Validate Render Blueprint
+        run: |
+          ruby -e 'require "yaml"; doc = YAML.load_file("render.yaml"); service = doc.fetch("services").find { |item| item["name"] == "legend-ai-api" }; abort "Render service config invalid" unless service && service["type"] == "web" && service["runtime"] == "node" && service["plan"] == "free" && service["rootDir"] == "backend" && service["healthCheckPath"] == "/health"; %w[DATABASE_URL APP_API_TOKEN AI_API_KEY].each { |key| abort "Missing secret prompt: #{key}" unless service.fetch("envVars").any? { |env| env["key"] == key && env["sync"] == false } }'
       - name: Validate production Docker Compose configuration
         run: DOMAIN=api.example.com POSTGRES_PASSWORD=test-password APP_API_TOKEN=test-token AI_API_KEY=sk-test docker compose config --quiet
       - name: Build backend container image
