@@ -1,15 +1,12 @@
 # Legend AI
 
-A local-first Android AI coding workspace built with Expo React Native.
+Local-first Android AI coding workspace built with Expo React Native.
 
-## How it works
-- **Phone storage:** Projects, project files, chat history and backup data stay on the Android device.
-- **GitHub:** This repository stores the app source code. In-app GitHub sign-in and repository sync are not implemented yet.
-- **AI API:** The app sends requests directly from the phone to the OpenAI Responses API using the owner's API key stored in Android SecureStore.
-- **No hosting server:** Normal app operation needs no Legend AI backend, VPS, domain, Render service or hosted database.
-- **Offline:** Local projects and files can be viewed and edited offline. AI replies require internet and a working API key.
+- Projects, files and chat history are stored on the phone.
+- AI requests go directly from the phone to OpenAI Responses API; configure a key in Settings.
+- Optional GitHub project-file sync uses a fine-grained GitHub token stored in Android SecureStore. Files are pushed/pulled under `legend-ai-projects/<project-id>/` in the selected repository branch.
+- The app does not require a hosted Legend AI backend, VPS, domain or cloud database.
+- AI API usage may incur charges. Mobile-stored credentials can be exposed on a compromised/rooted device; use dedicated restricted tokens and usage limits.
+- GitHub sync is project-file backup, not a full git client or GitHub OAuth implementation.
 
-## Security and cost
-The key is not committed to GitHub. SecureStore protects it at rest, but a key used by a client app is not equivalent to a server-side secret and may be exposed on a compromised/rooted device. Use a dedicated key and provider-side usage limits. API usage is billed separately; the app does not provide free API credits.
-
-See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) for verification status.
+See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) for verified and pending work.

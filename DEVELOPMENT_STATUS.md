@@ -1,30 +1,29 @@
 # Development Status
 
-## Local-first mobile implementation
-- [x] Expo React Native app with local projects, chat history, settings and project text-file manager.
-- [x] Local project and chat persistence on Android.
-- [x] Local backup export/share and validated restore.
-- [x] Native Android text-file and JSON backup import/export.
-- [x] API key and model settings stored with Expo SecureStore.
-- [x] Mobile chat client calls OpenAI Responses API directly; no Legend AI backend URL/token required by the app.
-- [x] Project files are sent as untrusted context with chat requests.
-- [x] Setup and architecture docs updated for local-first operation.
+## Implemented in source
+- [x] Local-first Expo Android app: projects, chat history, settings and project text files.
+- [x] Local project/chat persistence and backup JSON export/import.
+- [x] Android file import and backup sharing.
+- [x] OpenAI Responses API direct streaming client; API key stored in Android SecureStore.
+- [x] GitHub fine-grained token settings stored in SecureStore.
+- [x] GitHub repository connection test.
+- [x] Push project text files to `legend-ai-projects/<project-id>/` in a configured branch.
+- [x] Pull project text files from the same repository folder.
+- [x] Local-first architecture no longer requires a hosted Legend AI server.
 
-## Not yet implemented or verified
-- [ ] Run CI for this revision and inspect all test/build results.
-- [ ] Verify a fresh Android APK artifact for this exact commit.
-- [ ] Test a real OpenAI API request with the owner's key and model.
-- [ ] Complete physical Android installation and acceptance tests.
-- [ ] Implement GitHub sign-in/OAuth and in-app repository clone/pull/push/commit.
-- [ ] Add safe local code execution with output capture and a test/repair loop.
-- [ ] Add optional encrypted off-device backup/sync.
+## Verification and remaining work
+- [ ] Run CI and inspect tests/build for this exact revision.
+- [ ] Test GitHub connection and real push/pull with the owner's fine-grained token.
+- [ ] Test a real OpenAI request with the owner's key and chosen model.
+- [ ] Install APK on a physical Android phone and complete acceptance tests.
+- [ ] Add isolated code execution, command output capture and test/repair loop.
+- [ ] Implement safe GitHub OAuth instead of manually supplied fine-grained token, if desired.
+- [ ] Add optional encrypted off-device backup beyond GitHub text-file sync.
 
 ## Security and cost
-- API key is stored in Android SecureStore and is never committed. A client-side key is still less protected than a server-side secret; a compromised/rooted device may expose it.
-- Use a dedicated key and provider-side usage limits. API calls may incur charges.
-- Local storage is not an off-device backup. Export backups regularly.
-- GitHub currently hosts this app's source; in-app GitHub sync is not yet implemented.
-- Legacy `backend/` source remains for reference, but the Android app no longer depends on it.
-
-## Test policy
-Only mark CI, live AI, APK and physical-device checks complete after each has actually passed.
+- OpenAI key and GitHub token are stored in Android SecureStore, never in source code. A mobile app credential is not a server-only secret and may be exposed on compromised/rooted devices.
+- GitHub token should be fine-grained and limited to Contents read/write on the intended repository.
+- API usage can incur provider charges. Set usage limits.
+- Local storage is not a backup; export backups regularly.
+- GitHub sync currently handles project text files only; it is not a full Git client, does not create local branches or perform arbitrary git commits for the whole app.
+- Legacy backend source remains for reference; the Android app does not depend on it.
