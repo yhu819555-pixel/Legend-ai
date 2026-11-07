@@ -1,23 +1,19 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+  ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView,
+  StyleSheet, Text, TextInput, View
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { readProjects } from "./src/projectStore.js";
 import { createAndSaveProject } from "./src/projectActions.js";
+import ChatScreen from "./src/ChatScreen.js";
+import SettingsScreen from "./src/SettingsScreen.js";
 
 export default function App() {
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState("");
   const [activeProject, setActiveProject] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -25,19 +21,12 @@ export default function App() {
   async function loadProjects() {
     setLoading(true);
     setError("");
-    try {
-      const savedProjects = await readProjects(AsyncStorage);
-      setProjects(savedProjects);
-    } catch {
-      setError("Projects could not be loaded. Please retry.");
-    } finally {
-      setLoading(false);
-    }
+    try { setProjects(await readProjects(AsyncStorage)); }
+    catch { setError("Projects could not be loaded. Please retry."); }
+    finally { setLoading(false); }
   }
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  useEffect(() => { loadProjects(); }, []);
 
   async function handleCreateProject() {
     const cleanName = name.trim();
@@ -52,88 +41,67 @@ export default function App() {
       setProjects(result.projects);
       setName("");
       setActiveProject(result.project);
-    } catch {
-      setError("Project was not saved. Check device storage and retry.");
-    } finally {
-      setSaving(false);
-    }
+    } catch { setError("Project was not saved. Check device storage and retry."); }
+    finally { setSaving(false); }
   }
+
+  if (showSettings) return <SafeAreaView style={styles.screen}><SettingsScreen onBack={() => setShowSettings(false)} /></SafeAreaView>;
 
   if (activeProject) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <Pressable onPress={() => setActiveProject(null)} style={styles.back}>
-          <Text style={styles.backText}>‹  All projects</Text>
-        </Pressable>
-        <Text style={styles.eyebrow}>PROJECT WORKSPACE</Text>
-        <Text style={styles.heading}>{activeProject.name}</Text>
-        <Text style={styles.muted}>Project created and saved on this device.</Text>
-        <View style={styles.notice}>
-          <Text style={styles.noticeTitle}>Agent setup in progress</Text>
-          <Text style={styles.muted}>AI chat, file tools and isolated command execution will be added only after their backend integrations are implemented and tested.</Text>
+      <SafeAreaView style={styles.workspace}>
+        <View style={styles.workspaceTop}>
+          <Pressable onPress={() => setActiveProject(null)}><Text style={styles.backText}>‹ Projects</Text></Pressable>
+          <Pressable onPress={() => setShowSettings(true)}><Text style={styles.settingsLink}>Settings</Text></Pressable>
         </View>
+        <ChatScreen project={activeProject} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Text style={styles.eyebrow}>LEGEND AI</Text>
+      <View style={styles.topRow}>
+        <Text style={styles.eyebrow}>LEGEND AI</Text>
+        <Pressable onPress={() => setShowSettings(true)} style={styles.settingsButton}><Text style={styles.settingsText}>⚙ Settings</Text></Pressable>
+      </View>
       <Text style={styles.heading}>Your AI workspace</Text>
-      <Text style={styles.muted}>Create a project and pick up where you left off.</Text>
-
+      <Text style={styles.muted}>Create a project and start a conversation with your AI agent.</Text>
       <View style={styles.form}>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Project name"
-          placeholderTextColor="#78839a"
-          style={styles.input}
-          editable={!saving}
-          returnKeyType="done"
-          onSubmitEditing={handleCreateProject}
-        />
+        <TextInput value={name} onChangeText={setName} placeholder="Project name" placeholderTextColor="#78839a" style={styles.input} editable={!saving} returnKeyType="done" onSubmitEditing={handleCreateProject} />
         <Pressable onPress={handleCreateProject} disabled={saving} style={[styles.button, saving && styles.disabled]}>
           {saving ? <ActivityIndicator color="#07111f" /> : <Text style={styles.buttonText}>Create project</Text>}
         </Pressable>
       </View>
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={loadProjects}><Text style={styles.retry}>Retry</Text></Pressable>
-        </View>
-      ) : null}
-
+      {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable onPress={loadProjects}><Text style={styles.retry}>Retry</Text></Pressable></View> : null}
       <Text style={styles.section}>YOUR PROJECTS</Text>
-      {loading ? (
-        <ActivityIndicator color="#8ea8ff" style={styles.loader} />
-      ) : (
-        <FlatList
-          data={projects}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={projects.length ? undefined : styles.empty}
+      {loading ? <ActivityIndicator color="#8ea8ff" style={styles.loader} /> : (
+        <FlatList data={projects} keyExtractor={(item) => item.id} contentContainerStyle={projects.length ? undefined : styles.empty}
           ListEmptyComponent={<Text style={styles.muted}>No projects yet. Create your first one above.</Text>}
           renderItem={({ item }) => (
             <Pressable onPress={() => setActiveProject(item)} style={styles.project}>
               <View style={styles.projectIcon}><Text style={styles.projectIconText}>⌘</Text></View>
-              <View style={styles.projectInfo}>
-                <Text style={styles.projectName}>{item.name}</Text>
-                <Text style={styles.projectDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-              </View>
+              <View style={styles.projectInfo}><Text style={styles.projectName}>{item.name}</Text><Text style={styles.projectDate}>{new Date(item.createdAt).toLocaleDateString()}</Text></View>
               <Text style={styles.arrow}>›</Text>
             </Pressable>
           )}
         />
       )}
-      <Text style={styles.footer}>Private by design · AI credentials stay on the server</Text>
+      <Text style={styles.footer}>Private by design · AI provider key stays on the server</Text>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#09111f", padding: 24, paddingTop: 42 },
+  workspace: { flex: 1, backgroundColor: "#09111f", paddingTop: 36 },
+  workspaceTop: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 10 },
+  backText: { color: "#a9bcff", fontSize: 15, fontWeight: "700" },
+  settingsLink: { color: "#a9bcff", fontSize: 14, fontWeight: "700" },
+  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   eyebrow: { color: "#8ea8ff", fontSize: 12, fontWeight: "800", letterSpacing: 2, marginBottom: 12 },
+  settingsButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: "#172640", marginBottom: 10 },
+  settingsText: { color: "#c3d0f2", fontWeight: "700", fontSize: 12 },
   heading: { color: "#f4f7ff", fontSize: 30, fontWeight: "800", marginBottom: 8 },
   muted: { color: "#9ba8bf", fontSize: 14, lineHeight: 21 },
   form: { marginTop: 28, gap: 12 },
@@ -154,9 +122,5 @@ const styles = StyleSheet.create({
   errorBox: { marginTop: 14, padding: 14, borderRadius: 12, backgroundColor: "#3b1e2b" },
   errorText: { color: "#ffd4dc" },
   retry: { color: "#ffc0ce", fontWeight: "800", marginTop: 8 },
-  back: { marginBottom: 30 },
-  backText: { color: "#a9bcff", fontSize: 16, fontWeight: "700" },
-  notice: { marginTop: 28, backgroundColor: "#131f32", borderRadius: 16, padding: 18, gap: 8 },
-  noticeTitle: { color: "#f4f7ff", fontWeight: "800", fontSize: 16 },
   footer: { color: "#66758e", fontSize: 11, textAlign: "center", marginTop: 20, paddingBottom: 12 }
 });
