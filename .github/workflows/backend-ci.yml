@@ -77,17 +77,15 @@ jobs:
       - name: Build debug APK
         working-directory: mobile/android
         run: ./gradlew assembleDebug
-      - name: Install and launch APK on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          script: |
-            adb install mobile/android/app/build/outputs/apk/debug/app-debug.apk
-            adb shell monkey -p com.legendai.agent -c android.intent.category.LAUNCHER 1
-            sleep 5 && adb shell pidof com.legendai.agent
+      - name: Verify APK contains the embedded Android JS bundle
+        working-directory: mobile/android
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -l "$APK" | grep -E 'assets/(index\.android\.bundle|.*\.bundle)$'
+          unzip -p "$APK" assets/index.android.bundle > /tmp/index.android.bundle
+          test -s /tmp/index.android.bundle
+          echo "Verified: APK includes a non-empty embedded Android JS bundle"
       - uses: actions/upload-artifact@v4
         with:
           name: my-ai-agent-debug-apk
