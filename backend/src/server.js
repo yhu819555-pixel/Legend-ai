@@ -5,7 +5,7 @@ import { createOpenAIProvider } from "./providers/openai.js";
 import { createDatabase } from "./database.js";
 
 const port = Number(process.env.PORT ?? 8080);
-const MAX_BODY_BYTES = 64 * 1024;
+const MAX_BODY_BYTES = 512 * 1024;
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_CHARS = 8000;
 const MAX_PROJECT_FILES = 10;
