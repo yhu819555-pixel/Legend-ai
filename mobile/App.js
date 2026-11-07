@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView,
+  ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView, Share,
   StyleSheet, Text, TextInput, View
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -8,6 +8,7 @@ import { readProjects } from "./src/projectStore.js";
 import { createAndSaveProject } from "./src/projectActions.js";
 import { ensureCloudProject, listCloudProjects, mergeCloudProjectList } from "./src/projectSync.js";
 import { STORAGE_KEY } from "./src/projectStore.js";
+import { createBackup, restoreBackup } from "./src/backup.js";
 import ChatScreen from "./src/ChatScreen.js";
 import FilesScreen from "./src/FilesScreen.js";
 import SettingsScreen from "./src/SettingsScreen.js";
@@ -21,6 +22,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showImport, setShowImport] = useState(false);
+  const [backupText, setBackupText] = useState("");
+  const [backupBusy, setBackupBusy] = useState(false);
 
   async function loadProjects() {
     setLoading(true);
@@ -46,6 +50,31 @@ export default function App() {
   }
 
   useEffect(() => { loadProjects(); }, []);
+
+  async function handleExportBackup() {
+    setBackupBusy(true);
+    try {
+      const backup = await createBackup(AsyncStorage);
+      await Share.share({ message: JSON.stringify(backup) });
+    } catch { Alert.alert("Backup failed", "Backup export nahi ho paya."); }
+    finally { setBackupBusy(false); }
+  }
+
+  async function handleImportBackup() {
+    setBackupBusy(true);
+    try {
+      const result = await restoreBackup(AsyncStorage, backupText);
+      setProjects(result.projects);
+      setBackupText("");
+      setShowImport(false);
+      for (const project of result.projects) {
+        try { await ensureCloudProject(project, AsyncStorage); } catch { /* Local restore remains valid offline. */ }
+      }
+      Alert.alert("Backup restored", result.restoredCount + " project(s) restore ho gaye.");
+    } catch (cause) {
+      Alert.alert("Import failed", cause?.message || "Backup JSON check karo.");
+    } finally { setBackupBusy(false); }
+  }
 
   async function handleCreateProject() {
     const cleanName = name.trim();
@@ -100,6 +129,23 @@ export default function App() {
         </Pressable>
       </View>
       {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable onPress={loadProjects}><Text style={styles.retry}>Retry</Text></Pressable></View> : null}
+      <View style={styles.backupRow}>
+        <Pressable onPress={handleExportBackup} disabled={backupBusy} style={styles.backupButton}>
+          <Text style={styles.backupButtonText}>{backupBusy ? "Please wait…" : "Export backup"}</Text>
+        </Pressable>
+        <Pressable onPress={() => setShowImport((value) => !value)} disabled={backupBusy} style={styles.backupButton}>
+          <Text style={styles.backupButtonText}>Import backup</Text>
+        </Pressable>
+      </View>
+      {showImport ? (
+        <View style={styles.importPanel}>
+          <Text style={styles.importHint}>Paste the Legend AI backup JSON below. Existing projects with the same ID will be restored from this backup.</Text>
+          <TextInput value={backupText} onChangeText={setBackupText} multiline textAlignVertical="top" placeholder="Paste backup JSON…" placeholderTextColor="#78839a" style={styles.backupInput} />
+          <Pressable onPress={handleImportBackup} disabled={backupBusy || !backupText.trim()} style={styles.importButton}>
+            <Text style={styles.importButtonText}>Restore backup</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <Text style={styles.section}>YOUR PROJECTS</Text>
       {loading ? <ActivityIndicator color="#8ea8ff" style={styles.loader} /> : (
         <FlatList data={projects} keyExtractor={(item) => item.id} contentContainerStyle={projects.length ? undefined : styles.empty}
@@ -140,6 +186,14 @@ const styles = StyleSheet.create({
   button: { backgroundColor: "#a9bcff", padding: 16, borderRadius: 14, alignItems: "center" },
   disabled: { opacity: 0.6 },
   buttonText: { color: "#09111f", fontSize: 15, fontWeight: "800" },
+  backupRow: { flexDirection: "row", gap: 10, marginTop: 14 },
+  backupButton: { flex: 1, backgroundColor: "#172640", padding: 12, borderRadius: 11, alignItems: "center" },
+  backupButtonText: { color: "#c3d0f2", fontWeight: "700", fontSize: 12 },
+  importPanel: { backgroundColor: "#131f32", borderRadius: 12, padding: 12, marginTop: 10, gap: 8 },
+  importHint: { color: "#9ba8bf", fontSize: 11, lineHeight: 17 },
+  backupInput: { minHeight: 100, maxHeight: 180, borderColor: "#263651", borderWidth: 1, borderRadius: 9, padding: 10, color: "#fff", fontSize: 11 },
+  importButton: { backgroundColor: "#a9bcff", padding: 12, borderRadius: 9, alignItems: "center" },
+  importButtonText: { color: "#09111f", fontWeight: "800" },
   section: { color: "#7585a2", fontSize: 11, fontWeight: "800", letterSpacing: 1.6, marginTop: 34, marginBottom: 14 },
   project: { flexDirection: "row", alignItems: "center", padding: 14, backgroundColor: "#131f32", borderRadius: 14, marginBottom: 10 },
   projectIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: "#243454", alignItems: "center", justifyContent: "center" },
