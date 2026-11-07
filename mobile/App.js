@@ -6,6 +6,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { readProjects } from "./src/projectStore.js";
 import { createAndSaveProject } from "./src/projectActions.js";
+import { ensureCloudProject, listCloudProjects, mergeCloudProjectList } from "./src/projectSync.js";
+import { STORAGE_KEY } from "./src/projectStore.js";
 import ChatScreen from "./src/ChatScreen.js";
 import FilesScreen from "./src/FilesScreen.js";
 import SettingsScreen from "./src/SettingsScreen.js";
@@ -23,7 +25,22 @@ export default function App() {
   async function loadProjects() {
     setLoading(true);
     setError("");
-    try { setProjects(await readProjects(AsyncStorage)); }
+    try {
+      const localProjects = await readProjects(AsyncStorage);
+      setProjects(localProjects);
+      try {
+        const cloudProjects = await listCloudProjects();
+        if (cloudProjects) {
+          const merged = await mergeCloudProjectList(localProjects, cloudProjects);
+          setProjects(merged);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          for (const project of localProjects) {
+            try { await ensureCloudProject(project, AsyncStorage); }
+            catch { /* Keep local work available when cloud sync is unavailable. */ }
+          }
+        }
+      } catch { setError("Cloud sync abhi available nahi hai; local projects safe hain."); }
+    }
     catch { setError("Projects could not be loaded. Please retry."); }
     finally { setLoading(false); }
   }
@@ -44,6 +61,8 @@ export default function App() {
       setName("");
       setWorkspaceTab("chat");
       setActiveProject(result.project);
+      try { await ensureCloudProject(result.project, AsyncStorage); }
+      catch { setError("Project device par save hai, lekin cloud sync pending hai."); }
     } catch { setError("Project was not saved. Check device storage and retry."); }
     finally { setSaving(false); }
   }
