@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { readProjectFiles } from "./projectFiles.js";
 import { STORAGE_KEY } from "./projectStore.js";
+export { mergeCloudProjectList } from "./projectSyncUtils.js";
 
 const URL_KEY = "legend_ai_backend_url";
 const TOKEN_KEY = "legend_ai_backend_token";
@@ -12,8 +13,11 @@ export async function getSyncConfig(storage = AsyncStorage, secureStore = Secure
     storage.getItem(URL_KEY),
     secureStore.getItemAsync(TOKEN_KEY)
   ]);
-  const baseUrl = String(url || "").trim().replace(/\\/+$/, "");
-  if (!/^https:\\/\\/[^/]+$/i.test(baseUrl) || !token) return null;
+  let baseUrl = String(url || "").trim();
+  while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
+  let parsed;
+  try { parsed = new URL(baseUrl); } catch { return null; }
+  if (!["https:", "http:"].includes(parsed.protocol) || !parsed.hostname || !token) return null;
   return { baseUrl, token };
 }
 
@@ -81,9 +85,3 @@ export async function pullCloudProject(projectId, storage = AsyncStorage) {
   return project;
 }
 
-export async function mergeCloudProjectList(localProjects, cloudProjects) {
-  if (!Array.isArray(cloudProjects)) return localProjects;
-  const byId = new Map(localProjects.map((project) => [project.id, project]));
-  for (const project of cloudProjects) if (!byId.has(project.id)) byId.set(project.id, project);
-  return [...byId.values()];
-}
