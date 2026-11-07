@@ -27,8 +27,11 @@ export default function SettingsScreen({ onBack }) {
 
   async function save() {
     const cleanUrl = url.trim().replace(/\/+$/, "");
-    if (!/^https?:\/\/[^/]+/i.test(cleanUrl)) {
-      setMessage("Backend URL https:// se shuru hona chahiye.");
+    let parsedUrl;
+    try { parsedUrl = new URL(cleanUrl); } catch { parsedUrl = null; }
+    if (!parsedUrl || !["https:", "http:"].includes(parsedUrl.protocol) || !parsedUrl.hostname ||
+        parsedUrl.pathname !== "/" || parsedUrl.search || parsedUrl.hash) {
+      setMessage("Valid backend base URL dalo, jaise https://your-api.example.com.");
       return;
     }
     if (!token.trim() && !hasToken) {
