@@ -2,6 +2,7 @@ name: Project CI
 
 on:
   push:
+    branches: ["main"]
     paths:
       - "backend/**"
       - "mobile/**"
