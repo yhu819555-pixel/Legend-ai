@@ -11,7 +11,8 @@ import {
   View
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createProject as buildProject, readProjects, saveProject } from "./src/projectStore.js";
+import { readProjects } from "./src/projectStore.js";
+import { createAndSaveProject } from "./src/projectActions.js";
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -47,11 +48,10 @@ export default function App() {
     setSaving(true);
     setError("");
     try {
-      const project = buildProject(cleanName);
-      const next = await saveProject(AsyncStorage, projects, project);
-      setProjects(next);
+      const result = await createAndSaveProject(AsyncStorage, projects, cleanName);
+      setProjects(result.projects);
       setName("");
-      setActiveProject(project);
+      setActiveProject(result.project);
     } catch {
       setError("Project was not saved. Check device storage and retry.");
     } finally {
