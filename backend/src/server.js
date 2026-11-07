@@ -72,7 +72,7 @@ export function createApp({ provider = createOpenAIProvider(), apiToken = proces
       }
 
       const abortController = new AbortController();
-      request.on("close", () => {
+      response.on("close", () => {
         if (!response.writableEnded) abortController.abort();
       });
 
