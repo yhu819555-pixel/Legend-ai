@@ -47,7 +47,7 @@ export function createProjectStore(pool) {
         [id]
       );
       const messages = await pool.query(
-        "SELECT id, role, content, created_at AS \"createdAt\" FROM chat_messages WHERE project_id = $1 ORDER BY created_at ASC",
+        "SELECT id, role, content, created_at AS \"createdAt\" FROM chat_messages WHERE project_id = $1 ORDER BY position ASC",
         [id]
       );
       return { ...result.rows[0], files: files.rows, messages: messages.rows };
@@ -77,10 +77,11 @@ export function createProjectStore(pool) {
         }
         if (patch.messages !== undefined) {
           await client.query("DELETE FROM chat_messages WHERE project_id = $1", [id]);
-          for (const message of patch.messages) {
+          for (let position = 0; position < patch.messages.length; position += 1) {
+            const message = patch.messages[position];
             await client.query(
-              "INSERT INTO chat_messages (id, project_id, role, content) VALUES ($1, $2, $3, $4)",
-              [message.id, id, message.role, message.content]
+              "INSERT INTO chat_messages (id, project_id, role, content, position) VALUES ($1, $2, $3, $4, $5)",
+              [message.id, id, message.role, message.content, position]
             );
           }
         }
