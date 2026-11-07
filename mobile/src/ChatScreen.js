@@ -51,7 +51,7 @@ export default function ChatScreen({ project }) {
       const projectFiles = await readProjectFiles(AsyncStorage, project.id);
       const answer = await sendChatMessage({
         baseUrl, token,
-        messages: next.map(({ role, content: text }) => ({ role, content: text })),
+        messages: next.slice(-30).map(({ role, content: text }) => ({ role, content: text })),
         projectFiles,
         onDelta: (delta) => setMessages((current) => current.map((item) =>
           item.id === assistantId ? { ...item, content: item.content + delta } : item
