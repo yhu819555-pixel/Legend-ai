@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createProjectFile, deleteProjectFile, readProjectFiles, saveProjectFile } from "./projectFiles.js";
+import { pullCloudProject, syncProjectSnapshot } from "./projectSync.js";
 
 export default function FilesScreen({ project }) {
   const [files, setFiles] = useState([]);
@@ -12,8 +13,11 @@ export default function FilesScreen({ project }) {
 
   async function load() {
     setLoading(true);
-    try { setFiles(await readProjectFiles(AsyncStorage, project.id)); }
-    catch { setError("Project files load nahi hui."); }
+    try {
+      await pullCloudProject(project.id);
+      setFiles(await readProjectFiles(AsyncStorage, project.id));
+    }
+    catch { setError("Project files load nahi hui; local copy use ho rahi hai."); }
     finally { setLoading(false); }
   }
 
@@ -35,6 +39,8 @@ export default function FilesScreen({ project }) {
       const next = await saveProjectFile(AsyncStorage, project.id, file);
       setFiles(next);
       setEditing(null);
+      try { await syncProjectSnapshot(project, AsyncStorage); }
+      catch { setError("File device par save hai, cloud sync pending hai."); }
     } catch (cause) { setError(cause?.message || "File save nahi hui."); }
     finally { setSaving(false); }
   }
@@ -43,7 +49,7 @@ export default function FilesScreen({ project }) {
     Alert.alert("Delete file?", file.name + " ko is project se delete karna hai?", [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: async () => {
-        try { setFiles(await deleteProjectFile(AsyncStorage, project.id, file.id)); setEditing(null); }
+        try { setFiles(await deleteProjectFile(AsyncStorage, project.id, file.id)); setEditing(null); await syncProjectSnapshot(project, AsyncStorage); }
         catch { setError("File delete nahi hui."); }
       } }
     ]);
