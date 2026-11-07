@@ -99,7 +99,7 @@ export default function ChatScreen({ project }) {
           <Text style={styles.sendText}>↑</Text>
         </Pressable>
       </View>
-      <Text style={styles.footnote}>History and project files are stored on this device. AI keys remain on your backend.</Text>
+      <Text style={styles.footnote}>Chat and project files sync to your backend when configured. AI keys remain on your backend.</Text>
     </KeyboardAvoidingView>
   );
 }
