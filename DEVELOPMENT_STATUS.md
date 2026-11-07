@@ -7,13 +7,16 @@
 - [x] Environment template contains placeholders only; no credentials.
 - [x] Expo React Native Android app scaffold added.
 - [x] Local project create/open flow with AsyncStorage persistence added.
-- [x] Backend Node.js HTTP service scaffold added.
-- [x] Backend health endpoint and automated Node test cases added.
-- [x] GitHub Actions workflow added to run backend tests on relevant pushes and pull requests.
+- [x] Project persistence extracted into testable helpers.
+- [x] Mobile project persistence unit tests added (5 cases).
+- [x] Backend Node.js HTTP service scaffold and health endpoint added.
+- [x] Backend route tests added (2 cases).
+- [x] CI expanded to run backend tests, mobile tests, Expo doctor and Android JS bundle export.
 
 ## Pending features
-- [ ] Run backend tests in CI and fix any failures.
-- [ ] Install mobile dependencies and verify Expo app launches on Android.
+- [ ] Confirm latest full Project CI run passes all jobs.
+- [ ] Produce a signed/unsigned Android APK or AAB with a native build pipeline.
+- [ ] Launch app on Android emulator/device and verify UI interactions.
 - [ ] Add backend authentication and authorization.
 - [ ] Add database, versioned migrations, backup and restore tests.
 - [ ] Implement server-side project persistence and sync.
@@ -23,26 +26,26 @@
 - [ ] Select and verify an isolated workspace provider before enabling command execution.
 - [ ] Capture command output and implement test-failure diagnosis/repair.
 - [ ] Implement Git commit integration.
-- [ ] Add mobile tests and full CI coverage.
-- [ ] Build an Android APK and install it on a physical test device.
-- [ ] Run the complete MVP acceptance suite.
+- [ ] Run complete MVP acceptance suite, including persistence across app restarts and no-secret exposure.
 
 ## Known bugs / limitations
-- The mobile project list is currently stored locally on the device; it is not yet synced to the backend.
-- The project workspace screen is a truthful placeholder for integrations not yet implemented; there is no AI chat, file tool or command runner yet.
+- The mobile project list is stored locally on the device; it is not synced to the backend.
+- The workspace screen is an explicit placeholder; AI chat, file tools and command runner are not implemented.
 - The backend currently exposes only a health endpoint; no user data or AI provider calls are implemented.
-- No database, cloud workspace provider, provider credentials, APK or device test is configured.
+- No database, cloud workspace provider, provider credentials, APK or physical-device test is configured.
+- The mobile test suite currently tests project storage helpers, not rendered UI behavior.
 
 ## Test results
-- Repository metadata/read and write access: PASS.
-- Backend test cases: ADDED, NOT YET EXECUTED in this environment; GitHub Actions will report the result.
-- Expo dependency install / Android launch: NOT RUN.
-- Project persistence: IMPLEMENTED IN APP CODE, DEVICE VERIFICATION PENDING.
+- Previous backend CI run: PASS (2 backend tests).
+- Mobile unit tests: added; latest full CI result pending.
+- Expo dependency compatibility / doctor: pending latest full CI.
+- Android JavaScript bundle export: pending latest full CI.
+- Android native APK build / emulator launch / physical installation: NOT RUN.
 - AI streaming / file tools / isolated execution / Git commit: NOT IMPLEMENTED, NOT RUN.
-- APK build and physical installation: NOT RUN.
+- No test result is marked PASS until the corresponding CI job or device test completes successfully.
 
 ## Current working stage
-Stage 2 — minimal Android project workflow and backend health foundation. This stage is scaffolded; acceptance verification is pending. Do not advance to AI or execution integrations until current checks pass.
+Stage 2 — Android project create/open and local persistence, plus backend health foundation. Verification is being expanded to cover backend and mobile code together.
 
 ## Required credentials / decisions
 - Choose one AI provider and add its API key to backend secret storage only.
