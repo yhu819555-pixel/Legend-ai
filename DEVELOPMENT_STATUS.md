@@ -11,11 +11,11 @@
 - [x] Mobile project persistence unit tests added (5 cases).
 - [x] Backend Node.js HTTP service scaffold and health endpoint added.
 - [x] Backend route tests added (2 cases).
-- [x] CI expanded to run backend tests, mobile tests, Expo doctor and Android JS bundle export.
+- [x] CI expanded to run backend tests, mobile tests, Expo doctor, Android JS bundle export and native debug APK build.
 
 ## Pending features
-- [ ] Confirm latest full Project CI run passes all jobs.
-- [ ] Produce a signed/unsigned Android APK or AAB with a native build pipeline.
+- [ ] Confirm latest full Project CI run passes all jobs, including native Android APK build.
+- [ ] Download and inspect the debug APK artifact after CI build; physical installation remains to be verified.
 - [ ] Launch app on Android emulator/device and verify UI interactions.
 - [ ] Add backend authentication and authorization.
 - [ ] Add database, versioned migrations, backup and restore tests.
@@ -36,11 +36,12 @@
 - The mobile test suite currently tests project storage helpers, not rendered UI behavior.
 
 ## Test results
+- Combined local verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
 - Previous backend CI run: PASS (2 backend tests).
-- Mobile unit tests: added; latest full CI result pending.
-- Expo dependency compatibility / doctor: pending latest full CI.
-- Android JavaScript bundle export: pending latest full CI.
-- Android native APK build / emulator launch / physical installation: NOT RUN.
+- Mobile unit tests: PASS (5/5 locally; CI run also reported 5/5 on the first combined run).
+- Expo dependency compatibility / doctor: first CI run detected React Native 0.81.4 vs SDK-required 0.81.5; dependency corrected to 0.81.5 and recheck pending.
+- Android JavaScript bundle export: pending latest corrected CI.
+- Android native APK build / emulator launch / physical installation: CI build step added; latest run pending; emulator/physical install not yet run.
 - AI streaming / file tools / isolated execution / Git commit: NOT IMPLEMENTED, NOT RUN.
 - No test result is marked PASS until the corresponding CI job or device test completes successfully.
 
