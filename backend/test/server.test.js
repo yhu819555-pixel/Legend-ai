@@ -5,9 +5,13 @@ import { createApp } from "../src/server.js";
 test("GET /health returns a real API health response", async (t) => {
   const server = createApp();
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  t.after(() => new Promise((resolve, reject) =>
-    server.close((error) => error ? reject(error) : resolve())
-  ));
+  t.after(() => {
+    // Fetch may keep an idle HTTP connection alive; close it so Node tests exit.
+    server.closeAllConnections();
+    return new Promise((resolve, reject) =>
+      server.close((error) => error ? reject(error) : resolve())
+    );
+  });
 
   const address = server.address();
   const response = await fetch(`http://127.0.0.1:${address.port}/health`);
