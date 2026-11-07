@@ -8,7 +8,7 @@
 - [x] Backend Node.js HTTP service with authenticated OpenAI Responses API SSE relay, request limits and disconnect cancellation.
 - [x] PostgreSQL schema for projects, project files and chat messages, plus startup migration runner and transactional project updates.
 - [x] Authenticated backend project API for listing, creating, reading, updating and deleting projects.
-- [x] Android cloud-sync client for project lists, project files and chat history, retaining local data when cloud access is unavailable.
+- [x] Android cloud-sync client for project lists, project files and chat history, retaining local data when cloud access is unavailable.\n- [x] Local project deletion with confirmation and best-effort cloud cleanup.\n- [x] Local project backup export/share and validated backup restore/paste flow.
 - [x] Dockerfile and Docker Compose deployment scaffold with PostgreSQL health checks, persistent DB volume and private environment secrets.
 - [x] Backend and mobile unit tests, plus GitHub Actions workflow for tests, Expo checks, Android bundle export and APK build.
 
