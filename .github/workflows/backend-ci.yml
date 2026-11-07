@@ -25,9 +25,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install backend production dependencies
+        working-directory: backend
+        run: npm install --omit=dev --no-audit --no-fund
       - name: Run backend tests
         working-directory: backend
         run: npm test
+      - name: Validate Docker Compose configuration
+        run: POSTGRES_PASSWORD=test-password APP_API_TOKEN=test-token AI_API_KEY=sk-test docker compose config --quiet
+      - name: Build backend container image
+        run: docker build -f backend/Dockerfile -t legend-ai-backend:test backend
 
   mobile-tests-and-bundle:
     runs-on: ubuntu-latest
