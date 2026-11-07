@@ -11,8 +11,7 @@ import {
   View
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const STORAGE_KEY = "@my-ai-agent/projects";
+import { createProject, readProjects, saveProject } from "./src/projectStore.js";
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -26,8 +25,8 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      setProjects(raw ? JSON.parse(raw) : []);
+      const savedProjects = await readProjects(AsyncStorage);
+      setProjects(savedProjects);
     } catch {
       setError("Projects could not be loaded. Please retry.");
     } finally {
@@ -48,13 +47,8 @@ export default function App() {
     setSaving(true);
     setError("");
     try {
-      const project = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        name: cleanName,
-        createdAt: new Date().toISOString()
-      };
-      const next = [project, ...projects];
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      const project = createProject(cleanName);
+      const next = await saveProject(AsyncStorage, projects, project);
       setProjects(next);
       setName("");
       setActiveProject(project);
