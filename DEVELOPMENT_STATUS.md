@@ -39,7 +39,7 @@
 
 ## Test results
 - Previous combined verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
-- Expanded verification now contains 2 backend + 8 mobile unit tests (10 total); new project-action tests are awaiting CI execution.
+- Expanded verification: 2 backend + 8 mobile unit tests (10 total). Manually reproduced from the fetched source/test files: 10/10 PASS locally; the matching GitHub CI run is still queued.
 - Previous backend CI run: PASS (2 backend tests).
 - Mobile unit tests: PASS (5/5 locally; CI run also reported 5/5 on the first combined run).
 - Expo dependency compatibility / doctor: PASS after correcting React Native from 0.81.4 to SDK-required 0.81.5.
