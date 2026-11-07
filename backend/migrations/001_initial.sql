@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS project_files (
   content TEXT NOT NULL DEFAULT '',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (project_id, name),
-  CHECK (position('/' in name) = 0 AND position(E'\\\\' in name) = 0)
+  CHECK (position('/' in name) = 0 AND position(E'\\' in name) = 0)
 );
 
 CREATE TABLE IF NOT EXISTS chat_messages (
