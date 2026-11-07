@@ -69,3 +69,44 @@ test("chat route relays provider SSE bytes to an authenticated client", async ()
     assert.equal(await response.text(), expected);
   });
 });
+
+test("chat route sends bounded project files as untrusted developer context", async () => {
+  let received;
+  const provider = { stream: async ({ input }) => {
+    received = input;
+    return new ReadableStream({ start(controller) { controller.close(); } });
+  } };
+  await withServer(createApp({ apiToken: "secret", provider }), async (base) => {
+    const response = await fetch(base + "/v1/chat/stream", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "Explain this project" }],
+        project_files: [{ name: "main.js", content: "console.log('hello')" }]
+      })
+    });
+    assert.equal(response.status, 200);
+    assert.equal(received[0].role, "developer");
+    assert.match(received[0].content, /untrusted contents/);
+    assert.match(received[0].content, /console\.log/);
+    assert.deepEqual(received[1], { role: "user", content: "Explain this project" });
+  });
+});
+
+test("chat route rejects unsafe or oversized project file context", async () => {
+  let called = false;
+  const provider = { stream: async () => { called = true; } };
+  await withServer(createApp({ apiToken: "secret", provider }), async (base) => {
+    const response = await fetch(base + "/v1/chat/stream", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "Read file" }],
+        project_files: [{ name: "../secrets.txt", content: "not allowed" }]
+      })
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "invalid_project_files" });
+    assert.equal(called, false);
+  });
+});

@@ -6,6 +6,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { sendChatMessage } from "./chatClient.js";
+import { readProjectFiles } from "./projectFiles.js";
 
 const historyKey = (projectId) => "@legend-ai/chat/" + projectId;
 const URL_KEY = "legend_ai_backend_url";
@@ -34,20 +35,28 @@ export default function ChatScreen({ project }) {
     setError("");
     const userMessage = { id: String(Date.now()), role: "user", content };
     const next = [...messages, userMessage];
-    setMessages(next);
+    const assistantId = String(Date.now() + 1);
+    const pending = [...next, { id: assistantId, role: "assistant", content: "" }];
+    setMessages(pending);
     setBusy(true);
     try {
       await AsyncStorage.setItem(historyKey(project.id), JSON.stringify(next));
       const baseUrl = await AsyncStorage.getItem(URL_KEY);
       const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      const projectFiles = await readProjectFiles(AsyncStorage, project.id);
       const answer = await sendChatMessage({
         baseUrl, token,
-        messages: next.map(({ role, content: text }) => ({ role, content: text }))
+        messages: next.map(({ role, content: text }) => ({ role, content: text })),
+        projectFiles,
+        onDelta: (delta) => setMessages((current) => current.map((item) =>
+          item.id === assistantId ? { ...item, content: item.content + delta } : item
+        ))
       });
-      const completed = [...next, { id: String(Date.now() + 1), role: "assistant", content: answer }];
+      const completed = [...next, { id: assistantId, role: "assistant", content: answer }];
       setMessages(completed);
       await AsyncStorage.setItem(historyKey(project.id), JSON.stringify(completed));
     } catch (cause) {
+      setMessages(next);
       setError(cause?.message || "Message send nahi hua. Connection check karo.");
     } finally {
       setBusy(false);
@@ -58,7 +67,7 @@ export default function ChatScreen({ project }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.header}>
         <Text style={styles.title}>AI Chat</Text>
-        <Text style={styles.subtitle}>{project.name}</Text>
+        <Text style={styles.subtitle}>{project.name} · Project files are included as context</Text>
       </View>
       {!ready ? <ActivityIndicator color="#a9bcff" style={styles.loader} /> : (
         <FlatList
@@ -70,7 +79,7 @@ export default function ChatScreen({ project }) {
           renderItem={({ item }) => (
             <View style={[styles.bubble, item.role === "user" ? styles.userBubble : styles.aiBubble]}>
               <Text style={styles.role}>{item.role === "user" ? "YOU" : "LEGEND AI"}</Text>
-              <Text style={styles.message}>{item.content}</Text>
+              <Text style={styles.message}>{item.content || (busy ? "…" : "")}</Text>
             </View>
           )}
         />
@@ -78,20 +87,12 @@ export default function ChatScreen({ project }) {
       {busy ? <View style={styles.waiting}><ActivityIndicator color="#a9bcff" /><Text style={styles.waitText}>AI soch raha hai…</Text></View> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <View style={styles.composer}>
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          placeholder="Message Legend AI…"
-          placeholderTextColor="#78839a"
-          style={styles.input}
-          multiline
-          editable={!busy}
-        />
+        <TextInput value={draft} onChangeText={setDraft} placeholder="Message Legend AI…" placeholderTextColor="#78839a" style={styles.input} multiline editable={!busy} />
         <Pressable onPress={send} disabled={busy || !draft.trim()} style={[styles.send, (busy || !draft.trim()) && styles.disabled]}>
           <Text style={styles.sendText}>↑</Text>
         </Pressable>
       </View>
-      <Text style={styles.footnote}>History is stored on this device. AI keys remain on your backend.</Text>
+      <Text style={styles.footnote}>History and project files are stored on this device. AI keys remain on your backend.</Text>
     </KeyboardAvoidingView>
   );
 }
@@ -100,7 +101,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#09111f" },
   header: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1d2b43" },
   title: { color: "#f4f7ff", fontSize: 22, fontWeight: "800" },
-  subtitle: { color: "#91a0bb", fontSize: 12, marginTop: 3 },
+  subtitle: { color: "#91a0bb", fontSize: 11, marginTop: 3 },
   list: { flex: 1 },
   messageList: { padding: 16, gap: 12 },
   empty: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 32 },

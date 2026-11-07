@@ -7,12 +7,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { readProjects } from "./src/projectStore.js";
 import { createAndSaveProject } from "./src/projectActions.js";
 import ChatScreen from "./src/ChatScreen.js";
+import FilesScreen from "./src/FilesScreen.js";
 import SettingsScreen from "./src/SettingsScreen.js";
 
 export default function App() {
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState("");
   const [activeProject, setActiveProject] = useState(null);
+  const [workspaceTab, setWorkspaceTab] = useState("chat");
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,21 +42,26 @@ export default function App() {
       const result = await createAndSaveProject(AsyncStorage, projects, cleanName);
       setProjects(result.projects);
       setName("");
+      setWorkspaceTab("chat");
       setActiveProject(result.project);
     } catch { setError("Project was not saved. Check device storage and retry."); }
     finally { setSaving(false); }
   }
 
-  if (showSettings) return <SafeAreaView style={styles.screen}><SettingsScreen onBack={() => setShowSettings(false)} /></SafeAreaView>;
+  if (showSettings) return <SafeAreaView style={styles.workspace}><SettingsScreen onBack={() => setShowSettings(false)} /></SafeAreaView>;
 
   if (activeProject) {
     return (
       <SafeAreaView style={styles.workspace}>
         <View style={styles.workspaceTop}>
           <Pressable onPress={() => setActiveProject(null)}><Text style={styles.backText}>‹ Projects</Text></Pressable>
+          <View style={styles.tabs}>
+            <Pressable onPress={() => setWorkspaceTab("chat")} style={[styles.tab, workspaceTab === "chat" && styles.activeTab]}><Text style={[styles.tabText, workspaceTab === "chat" && styles.activeTabText]}>Chat</Text></Pressable>
+            <Pressable onPress={() => setWorkspaceTab("files")} style={[styles.tab, workspaceTab === "files" && styles.activeTab]}><Text style={[styles.tabText, workspaceTab === "files" && styles.activeTabText]}>Files</Text></Pressable>
+          </View>
           <Pressable onPress={() => setShowSettings(true)}><Text style={styles.settingsLink}>Settings</Text></Pressable>
         </View>
-        <ChatScreen project={activeProject} />
+        {workspaceTab === "chat" ? <ChatScreen project={activeProject} /> : <FilesScreen project={activeProject} />}
       </SafeAreaView>
     );
   }
@@ -79,7 +86,7 @@ export default function App() {
         <FlatList data={projects} keyExtractor={(item) => item.id} contentContainerStyle={projects.length ? undefined : styles.empty}
           ListEmptyComponent={<Text style={styles.muted}>No projects yet. Create your first one above.</Text>}
           renderItem={({ item }) => (
-            <Pressable onPress={() => setActiveProject(item)} style={styles.project}>
+            <Pressable onPress={() => { setWorkspaceTab("chat"); setActiveProject(item); }} style={styles.project}>
               <View style={styles.projectIcon}><Text style={styles.projectIconText}>⌘</Text></View>
               <View style={styles.projectInfo}><Text style={styles.projectName}>{item.name}</Text><Text style={styles.projectDate}>{new Date(item.createdAt).toLocaleDateString()}</Text></View>
               <Text style={styles.arrow}>›</Text>
@@ -95,9 +102,14 @@ export default function App() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#09111f", padding: 24, paddingTop: 42 },
   workspace: { flex: 1, backgroundColor: "#09111f", paddingTop: 36 },
-  workspaceTop: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 10 },
-  backText: { color: "#a9bcff", fontSize: 15, fontWeight: "700" },
-  settingsLink: { color: "#a9bcff", fontSize: 14, fontWeight: "700" },
+  workspaceTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingBottom: 10 },
+  backText: { color: "#a9bcff", fontSize: 14, fontWeight: "700" },
+  settingsLink: { color: "#a9bcff", fontSize: 13, fontWeight: "700" },
+  tabs: { flexDirection: "row", backgroundColor: "#131f32", padding: 3, borderRadius: 10 },
+  tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
+  activeTab: { backgroundColor: "#a9bcff" },
+  tabText: { color: "#9ba8bf", fontSize: 12, fontWeight: "700" },
+  activeTabText: { color: "#09111f" },
   topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   eyebrow: { color: "#8ea8ff", fontSize: 12, fontWeight: "800", letterSpacing: 2, marginBottom: 12 },
   settingsButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: "#172640", marginBottom: 10 },
