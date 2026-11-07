@@ -1,14 +1,11 @@
-# Security baseline
+# Security baseline — local-first app
 
-- Provider API keys and signing secrets exist only in backend environment/secret storage.
-- Never commit real credentials, tokens, private keys, database dumps or user project contents.
-- Use HTTPS in deployed environments; reject insecure production origins.
-- Validate and authorize every project/file/command operation server-side.
-- Apply request size limits, timeouts, rate limits and audit logging.
-- Treat project files, prompts, tool output and model responses as untrusted input.
-- Command execution is disabled until a dedicated isolated workspace provider is configured and reviewed.
-- Never use shell execution in the main API process for user-supplied commands.
-- Restrict workspace network access, CPU, memory, disk, runtime and lifetime; use least-privilege credentials.
-- Redact secrets from logs and error responses.
-- Backups must be access-controlled, encrypted at rest and periodically restore-tested.
-- Before public deployment, complete an explicit threat model and dependency/security review.
+- Never commit real API keys, tokens, private keys, database dumps or user project contents.
+- User-supplied AI API key is stored with Expo SecureStore on Android.
+- A key used directly by a mobile client is not a server-only secret. A compromised/rooted device or modified app may expose it.
+- Use a dedicated provider key, configure usage limits/budget alerts, and revoke it if the device is lost.
+- Use HTTPS for provider requests.
+- Treat project files and model output as untrusted input.
+- Arbitrary shell/command execution is disabled.
+- Local data is not a backup. Export backups and store them separately.
+- Do not add GitHub credentials or provider keys to source code, app config, logs or backup files.

@@ -6,7 +6,6 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { readProjects } from "./src/projectStore.js";
 import { createAndSaveProject } from "./src/projectActions.js";
-import { ensureCloudProject, listCloudProjects, mergeCloudProjectList, deleteCloudProject } from "./src/projectSync.js";
 import { STORAGE_KEY, deleteProject } from "./src/projectStore.js";
 import { createBackup, restoreBackup } from "./src/backup.js";
 import { pickBackupFile, shareBackupFile } from "./src/nativeFiles.js";
@@ -30,24 +29,7 @@ export default function App() {
   async function loadProjects() {
     setLoading(true);
     setError("");
-    try {
-      const localProjects = await readProjects(AsyncStorage);
-      setProjects(localProjects);
-      try {
-        const cloudProjects = await listCloudProjects();
-        if (cloudProjects) {
-          const merged = await mergeCloudProjectList(localProjects, cloudProjects);
-          setProjects(merged);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          const cloudIds = new Set(cloudProjects.map((project) => project.id));
-          for (const project of localProjects) {
-            if (cloudIds.has(project.id)) continue;
-            try { await ensureCloudProject(project, AsyncStorage); }
-            catch { /* Keep local work available when cloud sync is unavailable. */ }
-          }
-        }
-      } catch { setError("Cloud sync abhi available nahi hai; local projects safe hain."); }
-    }
+    try { setProjects(await readProjects(AsyncStorage)); }
     catch { setError("Projects could not be loaded. Please retry."); }
     finally { setLoading(false); }
   }
@@ -70,9 +52,6 @@ export default function App() {
     setProjects(result.projects);
     setBackupText("");
     setShowImport(false);
-    for (const project of result.projects) {
-      try { await ensureCloudProject(project, AsyncStorage); } catch { /* Local restore remains valid offline. */ }
-    }
     Alert.alert("Backup restored", result.restoredCount + " project(s) restore ho gaye.");
   }
 
@@ -104,8 +83,6 @@ export default function App() {
         try {
           const next = await deleteProject(AsyncStorage, projects, project.id);
           setProjects(next);
-          try { await deleteCloudProject(project.id); }
-          catch { setError("Project device se delete ho gaya; cloud copy delete nahi hui."); }
         } catch { setError("Project delete nahi ho paya."); }
       } }
     ]);
@@ -125,8 +102,6 @@ export default function App() {
       setName("");
       setWorkspaceTab("chat");
       setActiveProject(result.project);
-      try { await ensureCloudProject(result.project, AsyncStorage); }
-      catch { setError("Project device par save hai, lekin cloud sync pending hai."); }
     } catch { setError("Project was not saved. Check device storage and retry."); }
     finally { setSaving(false); }
   }
@@ -200,7 +175,7 @@ export default function App() {
           )}
         />
       )}
-      <Text style={styles.footer}>Private by design · AI provider key stays on the server</Text>
+      <Text style={styles.footer}>Local-first · Your projects stay on this phone</Text>
     </SafeAreaView>
   );
 }

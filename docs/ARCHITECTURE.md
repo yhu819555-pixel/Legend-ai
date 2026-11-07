@@ -1,27 +1,20 @@
-# Architecture (MVP)
+# Architecture — local-first Android app
 
 ## Boundaries
-
-- **Android client:** Expo React Native. It presents projects, chat and file/command results. It must not contain provider keys.
-- **Backend API:** authenticates users, stores project metadata, talks to the selected AI provider and streams responses to the client.
-- **Database:** server-side relational database with versioned migrations and tested backups.
-- **Workspace provider:** replaceable adapter that provisions an isolated workspace per project/session. User code must never run in the API process or on its host outside that isolation boundary.
-- **Git provider:** explicit, auditable commits against a project workspace/repository.
+- **Android client:** Expo React Native. Stores project metadata, files, chat history and backups on the device.
+- **AI provider:** App sends HTTPS requests directly to OpenAI Responses API. User supplies an API key stored at rest with Android SecureStore.
+- **GitHub:** Repository stores app source. In-app GitHub OAuth and repository operations are planned separately and not implemented yet.
+- **No hosted app backend:** Normal app operation does not require a Legend AI server or cloud database.
 
 ## Request flow
+1. User opens a local project.
+2. App reads chat history and project files from device storage.
+3. App sends conversation and selected file context directly to the AI provider over HTTPS.
+4. Streamed response is displayed and saved locally.
+5. User can export a backup file.
 
-1. Android client calls the backend over HTTPS.
-2. Backend validates identity, authorization, input size and rate limits.
-3. Backend loads project context from persistent storage/workspace.
-4. Provider adapter sends the request using a server-side secret.
-5. Streaming events are relayed to the client; disconnects and provider errors are handled.
-6. File changes and command execution require policy checks and workspace isolation.
-7. Successful changes are persisted and can be committed to Git.
+## Offline behavior
+Project browsing and local file management work offline. AI requests require internet and a valid provider key.
 
-## MVP sequencing
-
-Do not wire cloud execution until an isolation provider has been selected and its security boundary has been verified. Do not claim real AI streaming until an actual provider credential is configured and an end-to-end streaming test passes.
-
-## Replaceable interfaces
-
-Keep AI provider, database, workspace execution and Git integration behind backend interfaces. Avoid coupling mobile UI to a specific vendor.
+## Security trade-off
+A provider key in a mobile app is not a server-only secret. SecureStore protects it at rest but cannot prevent extraction from a compromised/rooted device or modified runtime. Use a dedicated key with provider-side usage limits. Never commit keys to source control.

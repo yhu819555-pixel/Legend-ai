@@ -1,36 +1,30 @@
 # Development Status
 
-## Implemented in the repository
-- [x] Expo React Native Android app with local projects, chat history, settings and project text-file manager.
-- [x] Secure device storage for the backend access token.
-- [x] Authenticated Node.js API with OpenAI Responses API streaming, bounded request validation and cancellation.
-- [x] PostgreSQL schema, ordered chat messages, migrations and transactional project updates.
-- [x] Authenticated project API for project metadata, files and chat history.
-- [x] Mobile cloud project list, pull and snapshot sync helpers; local data remains usable when cloud is unavailable.
-- [x] Local backup export/share and validated backup restore.
-- [x] Native Android text-file and JSON backup import, plus backup sharing/export.
-- [x] Docker Compose stack with private PostgreSQL, backend-only internal port, Caddy automatic HTTPS reverse proxy and persistent volumes.
-- [x] Deployment guide and private environment template.
-- [x] Backend/mobile tests and CI workflow for Docker config, backend image, Expo checks, Android bundle and debug APK.
+## Local-first mobile implementation
+- [x] Expo React Native app with local projects, chat history, settings and project text-file manager.
+- [x] Local project and chat persistence on Android.
+- [x] Local backup export/share and validated restore.
+- [x] Native Android text-file and JSON backup import/export.
+- [x] API key and model settings stored with Expo SecureStore.
+- [x] Mobile chat client calls OpenAI Responses API directly; no Legend AI backend URL/token required by the app.
+- [x] Project files are sent as untrusted context with chat requests.
+- [x] Setup and architecture docs updated for local-first operation.
 
-## Not yet verified or implemented
-- [ ] Confirm CI run for the latest source and inspect the generated APK artifact.
-- [ ] Deploy on a real server after the owner supplies/configures a DNS domain and private server environment values.
-- [ ] Run a live database migration and real OpenAI Responses API request with the owner's enabled model and key.
-- [ ] Replace the single shared backend token with real per-user identity, project ownership/authorization and token rotation before any multi-user exposure.
-- [ ] Add a general downloadable project archive/folder workflow beyond the current text-file import and JSON backup export.
-- [ ] Select and review an isolated workspace execution provider; implement safe file writes, command execution, output capture and test/repair loop only inside that isolation boundary.
-- [ ] Implement Git provider authorization and repository operations/commits.
-- [ ] Configure encrypted off-host database backups and verify a restore.
-- [ ] Complete physical Android device installation, interaction, offline/reconnect and acceptance tests.
+## Not yet implemented or verified
+- [ ] Run CI for this revision and inspect all test/build results.
+- [ ] Verify a fresh Android APK artifact for this exact commit.
+- [ ] Test a real OpenAI API request with the owner's key and model.
+- [ ] Complete physical Android installation and acceptance tests.
+- [ ] Implement GitHub sign-in/OAuth and in-app repository clone/pull/push/commit.
+- [ ] Add safe local code execution with output capture and a test/repair loop.
+- [ ] Add optional encrypted off-device backup/sync.
 
-## Security and deployment limits
-- The shared app token is suitable only for a private single-owner MVP deployment, not a public multi-user product.
-- The AI provider key must remain on the server and is never embedded in the APK.
-- AI currently receives supplied project files as untrusted read-only context; arbitrary command execution and workspace writes are intentionally disabled.
-- The PostgreSQL Docker volume is persistence, not a backup.
-- A successful CI run or APK build does not prove a live deployment, live AI request or physical-device acceptance.
+## Security and cost
+- API key is stored in Android SecureStore and is never committed. A client-side key is still less protected than a server-side secret; a compromised/rooted device may expose it.
+- Use a dedicated key and provider-side usage limits. API calls may incur charges.
+- Local storage is not an off-device backup. Export backups regularly.
+- GitHub currently hosts this app's source; in-app GitHub sync is not yet implemented.
+- Legacy `backend/` source remains for reference, but the Android app no longer depends on it.
 
 ## Test policy
-- Mark a test PASS only after the corresponding CI job or device test completes successfully.
-- Mark production deployment and live AI complete only after real external configuration and end-to-end verification.
+Only mark CI, live AI, APK and physical-device checks complete after each has actually passed.

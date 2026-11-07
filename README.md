@@ -1,31 +1,15 @@
-# MY AI AGENT
+# Legend AI
 
-A reliability-first AI coding agent. The first release is an Android app (Expo React Native) backed by a separate API service. AI credentials stay on the backend.
+A local-first Android AI coding workspace built with Expo React Native.
 
-## Development principles
+## How it works
+- **Phone storage:** Projects, project files, chat history and backup data stay on the Android device.
+- **GitHub:** This repository stores the app source code. In-app GitHub sign-in and repository sync are not implemented yet.
+- **AI API:** The app sends requests directly from the phone to the OpenAI Responses API using the owner's API key stored in Android SecureStore.
+- **No hosting server:** Normal app operation needs no Legend AI backend, VPS, domain, Render service or hosted database.
+- **Offline:** Local projects and files can be viewed and edited offline. AI replies require internet and a working API key.
 
-The rules in [docs/AGENT_RULES.md](docs/AGENT_RULES.md) are mandatory. Work in small, testable stages; never mark a feature complete without passing its test.
+## Security and cost
+The key is not committed to GitHub. SecureStore protects it at rest, but a key used by a client app is not equivalent to a server-side secret and may be exposed on a compromised/rooted device. Use a dedicated key and provider-side usage limits. API usage is billed separately; the app does not provide free API credits.
 
-## Repository layout
-
-- `mobile/` — Expo React Native Android application.
-- `backend/` — API service; owns secrets, persistence and provider access.
-- `docs/` — architecture, security and development decisions.
-- `DEVELOPMENT_STATUS.md` — source of truth for progress, blockers and test results.
-
-## MVP sequence
-
-1. Repository foundation and architecture.
-2. Android project create/open flow with persistent local project metadata.
-3. Backend project API and database migrations/backups.
-4. One real AI provider with server-side credentials and streaming.
-5. Project-file inspection and safe file edits.
-6. Isolated command execution through a replaceable workspace provider.
-7. Test-failure diagnosis/repair loop and Git commits.
-8. Android build, install and acceptance verification.
-
-Do not skip stages. Advanced providers, local AI and MCP are out of scope until the MVP acceptance tests pass.
-
-## Current status
-
-See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md). A scaffold or passing unit test is not proof that the complete acceptance criteria work.
+See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) for verification status.
