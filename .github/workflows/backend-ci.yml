@@ -1,17 +1,19 @@
-name: Backend CI
+name: Project CI
 
 on:
   push:
     paths:
       - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+      - "mobile/**"
+      - ".github/workflows/**"
   pull_request:
     paths:
       - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+      - "mobile/**"
+      - ".github/workflows/**"
 
 jobs:
-  test:
+  backend-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,3 +23,25 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: npm test
+
+  mobile-tests-and-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package.json
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Run mobile unit tests
+        working-directory: mobile
+        run: npm test
+      - name: Check Expo project health
+        working-directory: mobile
+        run: npx expo-doctor
+      - name: Export Android JavaScript bundle
+        working-directory: mobile
+        run: npx expo export --platform android --output-dir dist
