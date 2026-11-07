@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mergeCloudProjectList } from "../src/projectSync.js";
+import { mergeCloudProjectList } from "../src/projectSyncUtils.js";
 
 test("cloud project list merges without replacing local offline projects", async () => {
   const local = [{ id: "local", name: "Offline" }, { id: "same", name: "Local copy" }];
