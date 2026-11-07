@@ -20,11 +20,11 @@
 - [ ] Confirm the latest CI run passes the expanded mobile tests, APK build and emulator install/launch smoke test.
 - [ ] Download and inspect the debug APK artifact after the latest green CI run; physical installation remains to be verified.
 - [ ] Confirm automated Android emulator install/launch smoke test passes; manually verify UI interactions.
-- [ ] Add backend authentication and authorization.
+- [x] Add bearer-token authentication gate for the streaming chat API route. Full user identity, per-user authorization and token lifecycle remain pending.
 - [ ] Add database, versioned migrations, backup and restore tests.
 - [ ] Implement server-side project persistence and sync.
 - [ ] Configure an OpenAI API key only in backend secret storage and verify a live provider request.
-- [ ] Wire the provider adapter into an authenticated streaming API route and mobile chat UI; implement end-to-end retry/error handling.
+- [x] Add authenticated `/v1/chat/stream` API route with message validation, bounded request body, SSE relay, disconnect cancellation and safe provider errors; route tests added.\n- [ ] Configure backend `APP_API_TOKEN` and `AI_API_KEY`, then verify a live provider request.\n- [ ] Wire the authenticated streaming route into the Android chat UI; implement client-side retry/error handling and end-to-end tests.
 - [ ] Implement real project-file inspection and safe file create/edit operations.
 - [ ] Select and verify an isolated workspace provider before enabling command execution.
 - [ ] Capture command output and implement test-failure diagnosis/repair.
@@ -35,13 +35,13 @@
 - The mobile project list is stored locally on the device; it is not synced to the backend.
 - A real app-flow bug was found during source review: the screen handler shadowed the imported project factory. The handler was renamed and the create/save flow extracted into a tested action; expanded CI verification is pending.
 - The workspace screen is an explicit placeholder; AI chat, file tools and command runner are not implemented.
-- The backend currently exposes only a health endpoint; the OpenAI adapter is implemented and unit-tested but is not yet wired to an authenticated API route or live credential.
+- The backend exposes health and an authenticated SSE chat route. The route is covered by mocked provider tests; live credentials and Android client integration are not configured.
 - No database, cloud workspace provider, provider credentials, APK or physical-device test is configured.
 - The mobile test suite currently tests project storage helpers, not rendered UI behavior.
 
 ## Test results
 - Previous combined verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
-- Expanded verification: 6 backend + 8 mobile unit tests (14 total). Manually reproduced from the fetched source/test files: 14/14 PASS locally; matching GitHub CI is pending.
+- Expanded verification before chat route: 6 backend + 8 mobile unit tests (14 total). Authenticated chat route tests have now been added; matching GitHub CI is pending.
 - Previous backend CI run: PASS (2 backend tests).
 - Mobile unit tests: PASS (5/5 locally; CI run also reported 5/5 on the first combined run).
 - Expo dependency compatibility / doctor: PASS after correcting React Native from 0.81.4 to SDK-required 0.81.5.
