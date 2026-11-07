@@ -6,7 +6,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "test": "node -e \"console.log('Mobile UI smoke tests are not configured yet')\""
+    "test": "node --test"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
