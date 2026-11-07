@@ -17,7 +17,7 @@ export async function getSyncConfig(storage = AsyncStorage, secureStore = Secure
   while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
   let parsed;
   try { parsed = new URL(baseUrl); } catch { return null; }
-  if (!["https:", "http:"].includes(parsed.protocol) || !parsed.hostname || !token) return null;
+  if (!["https:", "http:"].includes(parsed.protocol) || !parsed.hostname || parsed.pathname !== "/" || parsed.search || parsed.hash || !token) return null;
   return { baseUrl, token };
 }
 
