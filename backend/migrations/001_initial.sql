@@ -20,9 +20,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 8000),
+  position INTEGER NOT NULL CHECK (position >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS projects_updated_at_idx ON projects(updated_at DESC);
 CREATE INDEX IF NOT EXISTS project_files_project_id_idx ON project_files(project_id);
-CREATE INDEX IF NOT EXISTS chat_messages_project_created_idx ON chat_messages(project_id, created_at);
+CREATE INDEX IF NOT EXISTS chat_messages_project_position_idx ON chat_messages(project_id, position);
