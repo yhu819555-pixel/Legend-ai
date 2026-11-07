@@ -27,8 +27,8 @@ services:
       APP_API_TOKEN: ${APP_API_TOKEN:?Set APP_API_TOKEN in your private .env file}
       AI_API_KEY: ${AI_API_KEY:?Set AI_API_KEY in your private .env file}
       AI_MODEL: ${AI_MODEL:-gpt-4.1-mini}
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     depends_on:
       database:
         condition: service_healthy
@@ -39,8 +39,28 @@ services:
       retries: 3
     networks: [private]
 
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN to a DNS name pointing at this server}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [private]
+
 networks:
   private:
 
 volumes:
   legend_ai_postgres:
+  caddy_data:
+  caddy_config:
