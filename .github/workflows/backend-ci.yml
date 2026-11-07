@@ -68,12 +68,7 @@ jobs:
           script: |
             adb install mobile/android/app/build/outputs/apk/debug/app-debug.apk
             adb shell monkey -p com.legendai.agent -c android.intent.category.LAUNCHER 1
-            for attempt in $(seq 1 15); do
-              if adb shell pidof com.legendai.agent >/dev/null; then exit 0; fi
-              sleep 2
-            done
-            adb logcat -d -s AndroidRuntime:E ReactNativeJS:E
-            exit 1
+            adb shell monkey -p com.legendai.agent -c android.intent.category.LAUNCHER 1 && sleep 5 && adb shell pidof com.legendai.agent
       - uses: actions/upload-artifact@v4
         with:
           name: my-ai-agent-debug-apk
