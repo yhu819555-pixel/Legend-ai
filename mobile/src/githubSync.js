@@ -1,9 +1,9 @@
-import * as SecureStore from "expo-secure-store";
 import { readProjectFiles, saveProjectFile } from "./projectFiles.js";
 
 const KEYS={token:"legend_ai_github_token",owner:"legend_ai_github_owner",repo:"legend_ai_github_repo",branch:"legend_ai_github_branch"};
-export async function getGitHubConfig(store=SecureStore){
- const [token,owner,repo,branch]=await Promise.all([store.getItemAsync(KEYS.token),store.getItemAsync(KEYS.owner),store.getItemAsync(KEYS.repo),store.getItemAsync(KEYS.branch)]);
+export async function getGitHubConfig(store){
+ const secureStore=store || await import("expo-secure-store");
+ const [token,owner,repo,branch]=await Promise.all([secureStore.getItemAsync(KEYS.token),secureStore.getItemAsync(KEYS.owner),secureStore.getItemAsync(KEYS.repo),secureStore.getItemAsync(KEYS.branch)]);
  if(!token||!owner||!repo)return null;
  if(!/^[A-Za-z0-9-]{1,39}$/.test(owner)||!/^[A-Za-z0-9._-]{1,100}$/.test(repo)||/[.]{2}/.test(repo))return null;
  return {token,owner,repo,branch:branch||"main"};
@@ -27,12 +27,12 @@ async function github(path,{method="GET",body,config,fetchImpl=fetch}={}){
  return response.status===204?{}:response.json();
 }
 function projectPath(projectId){if(!/^[A-Za-z0-9._-]{1,100}$/.test(projectId))throw new TypeError("Invalid project ID.");return "legend-ai-projects/"+projectId;}
-export async function testGitHubConnection({config:provided,store=SecureStore,fetchImpl=fetch}={}){
+export async function testGitHubConnection({config:provided,store,fetchImpl=fetch}={}){
  const config=provided||await getGitHubConfig(store);if(!config)throw new Error("Settings mein GitHub token, owner aur repository save karo.");
  const result=await github("/repos/"+encodeURIComponent(config.owner)+"/"+encodeURIComponent(config.repo),{config,fetchImpl});
  return {fullName:result.full_name,defaultBranch:result.default_branch,private:result.private};
 }
-export async function pushProjectToGitHub(project,storage,{config:provided,store=SecureStore,fetchImpl=fetch}={}){
+export async function pushProjectToGitHub(project,storage,{config:provided,store,fetchImpl=fetch}={}){
  const config=provided||await getGitHubConfig(store);if(!config)throw new Error("GitHub Settings pehle configure karo.");
  const files=await readProjectFiles(storage,project.id),base=projectPath(project.id);
  for(const file of files){
@@ -42,7 +42,7 @@ export async function pushProjectToGitHub(project,storage,{config:provided,store
  }
  return {pushed:files.length,repository:config.owner+"/"+config.repo,path:base};
 }
-export async function pullProjectFromGitHub(project,storage,{config:provided,store=SecureStore,fetchImpl=fetch}={}){
+export async function pullProjectFromGitHub(project,storage,{config:provided,store,fetchImpl=fetch}={}){
  const config=provided||await getGitHubConfig(store);if(!config)throw new Error("GitHub Settings pehle configure karo.");
  const base=projectPath(project.id),url="/repos/"+config.owner+"/"+config.repo+"/contents/"+base+"?ref="+encodeURIComponent(config.branch);
  let remote;try{remote=await github(url,{config,fetchImpl});}catch(error){if(error.status===404)return {pulled:0,repository:config.owner+"/"+config.repo,path:base};throw error;}
