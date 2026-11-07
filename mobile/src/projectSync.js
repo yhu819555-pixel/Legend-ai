@@ -45,7 +45,7 @@ export async function listCloudProjects() {
   return result?.projects ?? null;
 }
 
-export async function createCloudProject(project) {
+export async function deleteCloudProject(projectId) {\n  return request("/v1/projects/" + encodeURIComponent(projectId), { method: "DELETE" });\n}\n\nexport async function createCloudProject(project) {
   return request("/v1/projects", { method: "POST", body: { id: project.id, name: project.name } });
 }
 
