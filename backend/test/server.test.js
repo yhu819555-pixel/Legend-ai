@@ -111,3 +111,46 @@ test("chat route rejects unsafe or oversized project file context", async () => 
     assert.equal(called, false);
   });
 });
+
+test("project API requires bearer authentication", async () => {
+  await withServer(createApp({ apiToken: "secret", projectStore: { listProjects: async () => [] } }), async (base) => {
+    const response = await fetch(base + "/v1/projects");
+    assert.equal(response.status, 401);
+    assert.deepEqual(await response.json(), { error: "unauthorized" });
+  });
+});
+
+test("project API creates and lists cloud projects through the repository", async () => {
+  const projects = [];
+  const projectStore = {
+    listProjects: async () => projects,
+    createProject: async (project) => { projects.push(project); return project; }
+  };
+  await withServer(createApp({ apiToken: "secret", projectStore }), async (base) => {
+    const created = await fetch(base + "/v1/projects", {
+      method: "POST",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({ id: "project-1", name: "Cloud workspace" })
+    });
+    assert.equal(created.status, 201);
+    assert.deepEqual((await created.json()).project, { id: "project-1", name: "Cloud workspace" });
+    const listed = await fetch(base + "/v1/projects", { headers: { authorization: "Bearer secret" } });
+    assert.equal(listed.status, 200);
+    assert.equal((await listed.json()).projects.length, 1);
+  });
+});
+
+test("project API validates file and message sync payloads before persistence", async () => {
+  let called = false;
+  const projectStore = { updateProject: async () => { called = true; } };
+  await withServer(createApp({ apiToken: "secret", projectStore }), async (base) => {
+    const response = await fetch(base + "/v1/projects/p1", {
+      method: "PUT",
+      headers: { authorization: "Bearer secret", "content-type": "application/json" },
+      body: JSON.stringify({ files: [{ id: "f1", name: "../private", content: "x" }] })
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "invalid_project_files" });
+    assert.equal(called, false);
+  });
+});
