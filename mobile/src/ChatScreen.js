@@ -7,6 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { sendChatMessage } from "./chatClient.js";
 import { readProjectFiles } from "./projectFiles.js";
+import { pullCloudProject, syncProjectSnapshot } from "./projectSync.js";
 
 const historyKey = (projectId) => "@legend-ai/chat/" + projectId;
 const URL_KEY = "legend_ai_backend_url";
@@ -21,10 +22,14 @@ export default function ChatScreen({ project }) {
 
   useEffect(() => {
     let mounted = true;
-    AsyncStorage.getItem(historyKey(project.id))
-      .then((raw) => { if (mounted && raw) setMessages(JSON.parse(raw)); })
-      .catch(() => { if (mounted) setError("Chat history load nahi hui."); })
-      .finally(() => { if (mounted) setReady(true); });
+    (async () => {
+      try {
+        await pullCloudProject(project.id);
+        const raw = await AsyncStorage.getItem(historyKey(project.id));
+        if (mounted && raw) setMessages(JSON.parse(raw));
+      } catch { if (mounted) setError("Cloud history load nahi hui; local history use ho rahi hai."); }
+      finally { if (mounted) setReady(true); }
+    })();
     return () => { mounted = false; };
   }, [project.id]);
 
@@ -55,6 +60,8 @@ export default function ChatScreen({ project }) {
       const completed = [...next, { id: assistantId, role: "assistant", content: answer }];
       setMessages(completed);
       await AsyncStorage.setItem(historyKey(project.id), JSON.stringify(completed));
+      try { await syncProjectSnapshot(project, AsyncStorage); }
+      catch { setError("Reply save ho gaya, lekin cloud sync pending hai."); }
     } catch (cause) {
       setMessages(next);
       setError(cause?.message || "Message send nahi hua. Connection check karo.");
