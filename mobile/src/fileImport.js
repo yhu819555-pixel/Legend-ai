@@ -17,7 +17,7 @@ export function normalizeImportedTextFile(name, content) {
   if (text.length > MAX_IMPORTED_FILE_CHARS) {
     throw new RangeError("Text file is too large (maximum 6000 characters)");
   }
-  if (text.includes("\\u0000")) {
+  if (text.includes("\u0000")) {
     throw new TypeError("Selected file does not appear to be a text file");
   }
   return { name: cleanName, content: text };

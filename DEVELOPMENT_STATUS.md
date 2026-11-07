@@ -8,16 +8,17 @@
 - [x] Authenticated project API for project metadata, files and chat history.
 - [x] Mobile cloud project list, pull and snapshot sync helpers; local data remains usable when cloud is unavailable.
 - [x] Local backup export/share and validated backup restore.
+- [x] Native Android text-file and JSON backup import, plus backup sharing/export.
 - [x] Docker Compose stack with private PostgreSQL, backend-only internal port, Caddy automatic HTTPS reverse proxy and persistent volumes.
 - [x] Deployment guide and private environment template.
 - [x] Backend/mobile tests and CI workflow for Docker config, backend image, Expo checks, Android bundle and debug APK.
 
 ## Not yet verified or implemented
-- [ ] Confirm CI run for the latest HTTPS deployment changes and inspect the generated APK artifact.
+- [ ] Confirm CI run for the latest source and inspect the generated APK artifact.
 - [ ] Deploy on a real server after the owner supplies/configures a DNS domain and private server environment values.
 - [ ] Run a live database migration and real OpenAI Responses API request with the owner's enabled model and key.
 - [ ] Replace the single shared backend token with real per-user identity, project ownership/authorization and token rotation before any multi-user exposure.
-- [ ] Implement native Android document/folder picker and downloadable file archive workflows; current project files are app-local text records.
+- [ ] Add a general downloadable project archive/folder workflow beyond the current text-file import and JSON backup export.
 - [ ] Select and review an isolated workspace execution provider; implement safe file writes, command execution, output capture and test/repair loop only inside that isolation boundary.
 - [ ] Implement Git provider authorization and repository operations/commits.
 - [ ] Configure encrypted off-host database backups and verify a restore.

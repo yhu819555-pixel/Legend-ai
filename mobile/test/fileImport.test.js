@@ -17,7 +17,7 @@ test("normalizes a selected file to a safe project-local filename", () => {
 test("rejects oversized, empty-name and binary-like text imports", () => {
   assert.throws(() => normalizeImportedTextFile("main.js", "x".repeat(MAX_IMPORTED_FILE_CHARS + 1)), /too large/);
   assert.throws(() => normalizeImportedTextFile("../", "x"), /simple name/);
-  assert.throws(() => normalizeImportedTextFile("image.png", "a\\u0000b"), /text file/);
+  assert.throws(() => normalizeImportedTextFile("image.png", "a\u0000b"), /text file/);
 });
 
 test("enforces selected-file byte limits, including backup limit", () => {
