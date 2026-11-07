@@ -8,7 +8,7 @@ export class AIProviderError extends Error {
 
 export function createOpenAIProvider({
   apiKey = process.env.AI_API_KEY,
-  model = process.env.AI_MODEL || "gpt-6.1-sol",
+  model = process.env.AI_MODEL || "gpt-4.1-mini",
   fetchImpl = fetch
 } = {}) {
   return {
