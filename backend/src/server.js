@@ -164,6 +164,7 @@ export function createApp({ provider = createOpenAIProvider(), apiToken = proces
         sendJson(response, 404, { error: "not_found" });
       } catch (error) {
         if (error.status) sendJson(response, error.status, { error: error.message });
+        else if (error.code === "23505") sendJson(response, 409, { error: "project_conflict" });
         else {
           console.error("Project storage operation failed:", error?.message || "unknown error");
           sendJson(response, 500, { error: "project_storage_failed" });
