@@ -12,6 +12,8 @@
 - [x] Project creation action tests added (3 cases); CI verification pending.
 - [x] Backend Node.js HTTP service scaffold and health endpoint added.
 - [x] Backend route tests added (2 cases).
+- [x] Server-side OpenAI Responses API streaming adapter added, with input validation, upstream error handling and secret-safe errors.
+- [x] OpenAI provider adapter unit tests added (4 cases).
 - [x] CI expanded to run backend tests, mobile tests, Expo doctor, Android JS bundle export, native debug APK build and emulator launch smoke test.
 
 ## Pending features
@@ -21,8 +23,8 @@
 - [ ] Add backend authentication and authorization.
 - [ ] Add database, versioned migrations, backup and restore tests.
 - [ ] Implement server-side project persistence and sync.
-- [ ] Select and verify one real AI provider; configure its key only in backend secret storage.
-- [ ] Implement end-to-end AI streaming and retry/error handling.
+- [ ] Configure an OpenAI API key only in backend secret storage and verify a live provider request.
+- [ ] Wire the provider adapter into an authenticated streaming API route and mobile chat UI; implement end-to-end retry/error handling.
 - [ ] Implement real project-file inspection and safe file create/edit operations.
 - [ ] Select and verify an isolated workspace provider before enabling command execution.
 - [ ] Capture command output and implement test-failure diagnosis/repair.
@@ -33,13 +35,13 @@
 - The mobile project list is stored locally on the device; it is not synced to the backend.
 - A real app-flow bug was found during source review: the screen handler shadowed the imported project factory. The handler was renamed and the create/save flow extracted into a tested action; expanded CI verification is pending.
 - The workspace screen is an explicit placeholder; AI chat, file tools and command runner are not implemented.
-- The backend currently exposes only a health endpoint; no user data or AI provider calls are implemented.
+- The backend currently exposes only a health endpoint; the OpenAI adapter is implemented and unit-tested but is not yet wired to an authenticated API route or live credential.
 - No database, cloud workspace provider, provider credentials, APK or physical-device test is configured.
 - The mobile test suite currently tests project storage helpers, not rendered UI behavior.
 
 ## Test results
 - Previous combined verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
-- Expanded verification: 2 backend + 8 mobile unit tests (10 total). Manually reproduced from the fetched source/test files: 10/10 PASS locally; the matching GitHub CI run is still queued.
+- Expanded verification: 6 backend + 8 mobile unit tests (14 total). Manually reproduced from the fetched source/test files: 14/14 PASS locally; matching GitHub CI is pending.
 - Previous backend CI run: PASS (2 backend tests).
 - Mobile unit tests: PASS (5/5 locally; CI run also reported 5/5 on the first combined run).
 - Expo dependency compatibility / doctor: PASS after correcting React Native from 0.81.4 to SDK-required 0.81.5.
@@ -47,7 +49,8 @@
 - Android native prebuild: PASS. Android SDK setup: PASS after removing obsolete default `tools` package. Debug APK build: PASS in CI.
 - Emulator install succeeded in an earlier run, but its process-check shell script failed due to a multiline-shell invocation issue. The check was simplified to a single command; latest emulator verification is pending.
 - Physical-device install: pending.
-- AI streaming / file tools / isolated execution / Git commit: NOT IMPLEMENTED, NOT RUN.
+- OpenAI adapter unit tests: PASS (4/4); live provider request and client streaming: NOT RUN (backend secret and authenticated route are not configured).
+- File tools / isolated execution / Git commit: NOT IMPLEMENTED, NOT RUN.
 - No test result is marked PASS until the corresponding CI job or device test completes successfully.
 
 ## Current working stage
