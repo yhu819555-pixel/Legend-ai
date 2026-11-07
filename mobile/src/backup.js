@@ -35,7 +35,7 @@ function validateBackup(value) {
     }
     seen.add(project.id);
     if (!Array.isArray(project.files) || project.files.length > 10 ||
-        project.files.some((file) => !file || typeof file.id !== "string" ||
+        project.files.some((file) => !file || typeof file.id !== "string" || !/^[a-zA-Z0-9._-]{1,120}$/.test(file.id) ||
           typeof file.name !== "string" || !file.name.trim() || file.name.length > 100 ||
           /[\/\\]/.test(file.name) || file.name === "." || file.name === ".." ||
           typeof file.content !== "string" || file.content.length > 6000)) {
@@ -44,7 +44,7 @@ function validateBackup(value) {
     const total = project.files.reduce((sum, file) => sum + file.name.length + file.content.length, 0);
     if (total > 12000) throw new RangeError("Backup project files exceed the size limit");
     if (!Array.isArray(project.messages) || project.messages.length > 500 ||
-        project.messages.some((message) => !message || typeof message.id !== "string" ||
+        project.messages.some((message) => !message || typeof message.id !== "string" || !/^[a-zA-Z0-9._-]{1,120}$/.test(message.id) ||
           !["user", "assistant"].includes(message.role) || typeof message.content !== "string" ||
           !message.content.trim() || message.content.length > 8000)) {
       throw new TypeError("Backup contains invalid chat history");
