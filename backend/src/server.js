@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { pathToFileURL } from "node:url";
 
 const port = Number(process.env.PORT ?? 8080);
 
@@ -18,7 +19,8 @@ export function createApp() {
   });
 }
 
-if (process.env.NODE_ENV !== "test") {
+// Start the listener only when this file is executed directly, never when imported by tests.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   createApp().listen(port, "0.0.0.0", () => {
     console.log(`API listening on port ${port}`);
   });
