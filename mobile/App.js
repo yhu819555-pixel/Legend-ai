@@ -6,8 +6,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { readProjects } from "./src/projectStore.js";
 import { createAndSaveProject } from "./src/projectActions.js";
-import { ensureCloudProject, listCloudProjects, mergeCloudProjectList } from "./src/projectSync.js";
-import { STORAGE_KEY } from "./src/projectStore.js";
+import { ensureCloudProject, listCloudProjects, mergeCloudProjectList, deleteCloudProject } from "./src/projectSync.js";
+import { STORAGE_KEY, deleteProject } from "./src/projectStore.js";
 import { createBackup, restoreBackup } from "./src/backup.js";
 import ChatScreen from "./src/ChatScreen.js";
 import FilesScreen from "./src/FilesScreen.js";
@@ -76,6 +76,20 @@ export default function App() {
     } catch (cause) {
       Alert.alert("Import failed", cause?.message || "Backup JSON check karo.");
     } finally { setBackupBusy(false); }
+  }
+
+  function handleDeleteProject(project) {
+    Alert.alert("Delete project?", project.name + " aur uski local files/chat history delete ho jayegi.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => {
+        try {
+          const next = await deleteProject(AsyncStorage, projects, project.id);
+          setProjects(next);
+          try { await deleteCloudProject(project.id); }
+          catch { setError("Project device se delete ho gaya; cloud copy delete nahi hui."); }
+        } catch { setError("Project delete nahi ho paya."); }
+      } }
+    ]);
   }
 
   async function handleCreateProject() {
@@ -153,11 +167,14 @@ export default function App() {
         <FlatList data={projects} keyExtractor={(item) => item.id} contentContainerStyle={projects.length ? undefined : styles.empty}
           ListEmptyComponent={<Text style={styles.muted}>No projects yet. Create your first one above.</Text>}
           renderItem={({ item }) => (
-            <Pressable onPress={() => { setWorkspaceTab("chat"); setActiveProject(item); }} style={styles.project}>
-              <View style={styles.projectIcon}><Text style={styles.projectIconText}>⌘</Text></View>
-              <View style={styles.projectInfo}><Text style={styles.projectName}>{item.name}</Text><Text style={styles.projectDate}>{new Date(item.createdAt).toLocaleDateString()}</Text></View>
-              <Text style={styles.arrow}>›</Text>
-            </Pressable>
+            <View style={styles.project}>
+              <Pressable onPress={() => { setWorkspaceTab("chat"); setActiveProject(item); }} style={styles.projectOpen}>
+                <View style={styles.projectIcon}><Text style={styles.projectIconText}>⌘</Text></View>
+                <View style={styles.projectInfo}><Text style={styles.projectName}>{item.name}</Text><Text style={styles.projectDate}>{new Date(item.createdAt).toLocaleDateString()}</Text></View>
+                <Text style={styles.arrow}>›</Text>
+              </Pressable>
+              <Pressable onPress={() => handleDeleteProject(item)} style={styles.projectDelete}><Text style={styles.projectDeleteText}>Delete</Text></Pressable>
+            </View>
           )}
         />
       )}
@@ -197,7 +214,10 @@ const styles = StyleSheet.create({
   importButton: { backgroundColor: "#a9bcff", padding: 12, borderRadius: 9, alignItems: "center" },
   importButtonText: { color: "#09111f", fontWeight: "800" },
   section: { color: "#7585a2", fontSize: 11, fontWeight: "800", letterSpacing: 1.6, marginTop: 34, marginBottom: 14 },
-  project: { flexDirection: "row", alignItems: "center", padding: 14, backgroundColor: "#131f32", borderRadius: 14, marginBottom: 10 },
+  project: { flexDirection: "row", alignItems: "center", padding: 10, backgroundColor: "#131f32", borderRadius: 14, marginBottom: 10 },
+  projectOpen: { flexDirection: "row", alignItems: "center", flex: 1, padding: 4 },
+  projectDelete: { paddingHorizontal: 9, paddingVertical: 8 },
+  projectDeleteText: { color: "#ffb6c5", fontSize: 11, fontWeight: "700" },
   projectIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: "#243454", alignItems: "center", justifyContent: "center" },
   projectIconText: { color: "#b8c8ff", fontSize: 21, fontWeight: "700" },
   projectInfo: { flex: 1, marginLeft: 12 },
