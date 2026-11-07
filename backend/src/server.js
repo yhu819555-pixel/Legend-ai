@@ -84,7 +84,7 @@ export function createApp({ provider = createOpenAIProvider(), apiToken = proces
       return;
     }
 
-    const projectMatch = request.url?.match(/^\\/v1\\/projects(?:\\/([^/?]+))?$/);
+    const projectMatch = request.url?.split("?")[0].match(new RegExp("^/v1/projects(?:/([^/?]+))?$"));
     if (projectMatch && ["GET", "POST", "PUT", "DELETE"].includes(request.method)) {
       if (!isAuthorized(request, apiToken)) {
         sendJson(response, apiToken ? 401 : 503, { error: apiToken ? "unauthorized" : "auth_not_configured" });
