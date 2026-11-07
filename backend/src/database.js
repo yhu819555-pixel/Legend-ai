@@ -22,7 +22,7 @@ export function createProjectStore(pool) {
     async migrate() {
       await pool.query("CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
       const files = (await readdir(migrationsDirectory))
-        .filter((name) => /^\\d+_[a-z0-9_-]+\\.sql$/i.test(name))
+        .filter((name) => name.length > 6 && name[0] >= "0" && name[0] <= "9" && name.includes("_") && name.endsWith(".sql"))
         .sort();
       for (const file of files) {
         const applied = await pool.query("SELECT version FROM schema_migrations WHERE version = $1", [file]);
