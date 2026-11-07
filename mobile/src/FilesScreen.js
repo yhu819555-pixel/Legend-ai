@@ -3,12 +3,14 @@ import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, TextIn
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createProjectFile, deleteProjectFile, readProjectFiles, saveProjectFile } from "./projectFiles.js";
 import { pullCloudProject, syncProjectSnapshot } from "./projectSync.js";
+import { pickTextFile } from "./nativeFiles.js";
 
 export default function FilesScreen({ project }) {
   const [files, setFiles] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
 
   async function load() {
@@ -27,6 +29,24 @@ export default function FilesScreen({ project }) {
     if (files.length >= 10) { setError("Ek project mein maximum 10 text files rakh sakte ho."); return; }
     setError("");
     setEditing({ id: "", name: "", content: "" });
+  }
+
+  async function importFile() {
+    setImporting(true);
+    setError("");
+    try {
+      const imported = await pickTextFile();
+      if (!imported) return;
+      if (files.length >= 10) throw new RangeError("Ek project mein maximum 10 text files rakh sakte ho.");
+      const next = await saveProjectFile(AsyncStorage, project.id, createProjectFile(imported.name, imported.content));
+      setFiles(next);
+      try { await syncProjectSnapshot(project, AsyncStorage); }
+      catch { setError("File import hokar device par save hai, cloud sync pending hai."); }
+    } catch (cause) {
+      setError(cause?.message || "File import nahi hui.");
+    } finally {
+      setImporting(false);
+    }
   }
 
   async function save() {
@@ -78,13 +98,18 @@ export default function FilesScreen({ project }) {
     <View style={styles.screen}>
       <View style={styles.headingRow}>
         <View><Text style={styles.title}>Project files</Text><Text style={styles.subtitle}>{project.name} · {files.length}/10 files</Text></View>
-        <Pressable onPress={newFile} style={styles.add}><Text style={styles.addText}>+ New</Text></Pressable>
+        <View style={styles.actions}>
+          <Pressable onPress={importFile} disabled={importing || loading} style={styles.import}>
+            <Text style={styles.importText}>{importing ? "Importing…" : "Import"}</Text>
+          </Pressable>
+          <Pressable onPress={newFile} disabled={importing} style={styles.add}><Text style={styles.addText}>+ New</Text></Pressable>
+        </View>
       </View>
-      <Text style={styles.description}>Text files saved in this project are shared with Legend AI as read-only context during chat.</Text>
+      <Text style={styles.description}>Text files saved in this project are shared with Legend AI as read-only context during chat. Import a text or source-code file from your device.</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {loading ? <ActivityIndicator color="#a9bcff" style={styles.loader} /> : (
         <FlatList data={files} keyExtractor={(item) => item.id} contentContainerStyle={files.length ? styles.list : styles.empty}
-          ListEmptyComponent={<Text style={styles.emptyText}>No project files yet. Create a file to give AI code or notes to inspect.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>No project files yet. Create or import a file to give AI code or notes to inspect.</Text>}
           renderItem={({ item }) => (
             <Pressable onPress={() => setEditing(item)} style={styles.file}>
               <View style={styles.fileIcon}><Text style={styles.fileIconText}>{"{ }"}</Text></View>
@@ -102,11 +127,14 @@ export default function FilesScreen({ project }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#09111f", padding: 20 },
   headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  actions: { flexDirection: "row", alignItems: "center", gap: 7 },
   title: { color: "#f4f7ff", fontSize: 22, fontWeight: "800" },
   subtitle: { color: "#91a0bb", fontSize: 11, marginTop: 4 },
   description: { color: "#9ba8bf", fontSize: 12, lineHeight: 19, marginTop: 12, marginBottom: 16 },
-  add: { backgroundColor: "#a9bcff", paddingHorizontal: 15, paddingVertical: 10, borderRadius: 11 },
+  add: { backgroundColor: "#a9bcff", paddingHorizontal: 13, paddingVertical: 10, borderRadius: 11 },
   addText: { color: "#09111f", fontWeight: "900" },
+  import: { backgroundColor: "#172640", paddingHorizontal: 13, paddingVertical: 10, borderRadius: 11 },
+  importText: { color: "#c3d0f2", fontWeight: "800" },
   list: { gap: 9, paddingBottom: 20 },
   empty: { flexGrow: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 22 },
   emptyText: { color: "#9ba8bf", textAlign: "center", lineHeight: 22 },

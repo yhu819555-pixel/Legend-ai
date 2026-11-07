@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView, Share,
+  ActivityIndicator, Alert, FlatList, Pressable, SafeAreaView,
   StyleSheet, Text, TextInput, View
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,6 +9,7 @@ import { createAndSaveProject } from "./src/projectActions.js";
 import { ensureCloudProject, listCloudProjects, mergeCloudProjectList, deleteCloudProject } from "./src/projectSync.js";
 import { STORAGE_KEY, deleteProject } from "./src/projectStore.js";
 import { createBackup, restoreBackup } from "./src/backup.js";
+import { pickBackupFile, shareBackupFile } from "./src/nativeFiles.js";
 import ChatScreen from "./src/ChatScreen.js";
 import FilesScreen from "./src/FilesScreen.js";
 import SettingsScreen from "./src/SettingsScreen.js";
@@ -57,22 +58,40 @@ export default function App() {
     setBackupBusy(true);
     try {
       const backup = await createBackup(AsyncStorage);
-      await Share.share({ message: JSON.stringify(backup) });
-    } catch { Alert.alert("Backup failed", "Backup export nahi ho paya."); }
+      await shareBackupFile(backup);
+    } catch (cause) {
+      Alert.alert("Backup failed", cause?.message || "Backup export nahi ho paya.");
+    }
     finally { setBackupBusy(false); }
+  }
+
+  async function restoreAndSyncBackup(source) {
+    const result = await restoreBackup(AsyncStorage, source);
+    setProjects(result.projects);
+    setBackupText("");
+    setShowImport(false);
+    for (const project of result.projects) {
+      try { await ensureCloudProject(project, AsyncStorage); } catch { /* Local restore remains valid offline. */ }
+    }
+    Alert.alert("Backup restored", result.restoredCount + " project(s) restore ho gaye.");
+  }
+
+  async function handleImportBackupFile() {
+    setBackupBusy(true);
+    try {
+      const source = await pickBackupFile();
+      if (source !== null) await restoreAndSyncBackup(source);
+    } catch (cause) {
+      Alert.alert("Import failed", cause?.message || "Backup JSON check karo.");
+    } finally {
+      setBackupBusy(false);
+    }
   }
 
   async function handleImportBackup() {
     setBackupBusy(true);
     try {
-      const result = await restoreBackup(AsyncStorage, backupText);
-      setProjects(result.projects);
-      setBackupText("");
-      setShowImport(false);
-      for (const project of result.projects) {
-        try { await ensureCloudProject(project, AsyncStorage); } catch { /* Local restore remains valid offline. */ }
-      }
-      Alert.alert("Backup restored", result.restoredCount + " project(s) restore ho gaye.");
+      await restoreAndSyncBackup(backupText);
     } catch (cause) {
       Alert.alert("Import failed", cause?.message || "Backup JSON check karo.");
     } finally { setBackupBusy(false); }
@@ -147,7 +166,7 @@ export default function App() {
       {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text><Pressable onPress={loadProjects}><Text style={styles.retry}>Retry</Text></Pressable></View> : null}
       <View style={styles.backupRow}>
         <Pressable onPress={handleExportBackup} disabled={backupBusy} style={styles.backupButton}>
-          <Text style={styles.backupButtonText}>{backupBusy ? "Please wait…" : "Export backup"}</Text>
+          <Text style={styles.backupButtonText}>{backupBusy ? "Please wait…" : "Export backup file"}</Text>
         </Pressable>
         <Pressable onPress={() => setShowImport((value) => !value)} disabled={backupBusy} style={styles.backupButton}>
           <Text style={styles.backupButtonText}>Import backup</Text>
@@ -155,10 +174,13 @@ export default function App() {
       </View>
       {showImport ? (
         <View style={styles.importPanel}>
-          <Text style={styles.importHint}>Paste the Legend AI backup JSON below. Existing projects with the same ID will be restored from this backup.</Text>
-          <TextInput value={backupText} onChangeText={setBackupText} multiline textAlignVertical="top" placeholder="Paste backup JSON…" placeholderTextColor="#78839a" style={styles.backupInput} />
+          <Text style={styles.importHint}>Choose a saved Legend AI backup JSON file, or paste its contents below. Existing projects with the same ID will be replaced by the backup.</Text>
+          <Pressable onPress={handleImportBackupFile} disabled={backupBusy} style={styles.importButton}>
+            <Text style={styles.importButtonText}>{backupBusy ? "Please wait…" : "Choose backup file"}</Text>
+          </Pressable>
+          <TextInput value={backupText} onChangeText={setBackupText} multiline textAlignVertical="top" placeholder="Or paste backup JSON…" placeholderTextColor="#78839a" style={styles.backupInput} />
           <Pressable onPress={handleImportBackup} disabled={backupBusy || !backupText.trim()} style={styles.importButton}>
-            <Text style={styles.importButtonText}>Restore backup</Text>
+            <Text style={styles.importButtonText}>Restore pasted backup</Text>
           </Pressable>
         </View>
       ) : null}
