@@ -11,7 +11,7 @@ import {
   View
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createProject, readProjects, saveProject } from "./src/projectStore.js";
+import { createProject as buildProject, readProjects, saveProject } from "./src/projectStore.js";
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -38,7 +38,7 @@ export default function App() {
     loadProjects();
   }, []);
 
-  async function createProject() {
+  async function handleCreateProject() {
     const cleanName = name.trim();
     if (!cleanName) {
       Alert.alert("Project name required", "Enter a name to create a project.");
@@ -47,7 +47,7 @@ export default function App() {
     setSaving(true);
     setError("");
     try {
-      const project = createProject(cleanName);
+      const project = buildProject(cleanName);
       const next = await saveProject(AsyncStorage, projects, project);
       setProjects(next);
       setName("");
@@ -91,9 +91,9 @@ export default function App() {
           style={styles.input}
           editable={!saving}
           returnKeyType="done"
-          onSubmitEditing={createProject}
+          onSubmitEditing={handleCreateProject}
         />
-        <Pressable onPress={createProject} disabled={saving} style={[styles.button, saving && styles.disabled]}>
+        <Pressable onPress={handleCreateProject} disabled={saving} style={[styles.button, saving && styles.disabled]}>
           {saving ? <ActivityIndicator color="#07111f" /> : <Text style={styles.buttonText}>Create project</Text>}
         </Pressable>
       </View>
