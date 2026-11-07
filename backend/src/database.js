@@ -1,8 +1,8 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const migrationPath = join(dirname(fileURLToPath(import.meta.url)), "../migrations/001_initial.sql");
+const migrationsDirectory = join(dirname(fileURLToPath(import.meta.url)), "../migrations");
 
 export async function createDatabase({ connectionString = process.env.DATABASE_URL, ssl = process.env.DATABASE_SSL === "true" } = {}) {
   if (!connectionString) throw new Error("DATABASE_URL is not configured");
@@ -20,8 +20,27 @@ export async function createDatabase({ connectionString = process.env.DATABASE_U
 export function createProjectStore(pool) {
   return {
     async migrate() {
-      const sql = await readFile(migrationPath, "utf8");
-      await pool.query(sql);
+      await pool.query("CREATE TABLE IF NOT EXISTS schema_migrations (version TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+      const files = (await readdir(migrationsDirectory))
+        .filter((name) => /^\\d+_[a-z0-9_-]+\\.sql$/i.test(name))
+        .sort();
+      for (const file of files) {
+        const applied = await pool.query("SELECT version FROM schema_migrations WHERE version = $1", [file]);
+        if (applied.rowCount) continue;
+        const sql = await readFile(join(migrationsDirectory, file), "utf8");
+        const client = await pool.connect();
+        try {
+          await client.query("BEGIN");
+          await client.query(sql);
+          await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", [file]);
+          await client.query("COMMIT");
+        } catch (error) {
+          await client.query("ROLLBACK");
+          throw error;
+        } finally {
+          client.release();
+        }
+      }
     },
     async listProjects() {
       const { rows } = await pool.query(
