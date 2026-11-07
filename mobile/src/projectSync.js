@@ -58,7 +58,7 @@ export async function syncProjectSnapshot(project, storage = AsyncStorage) {
     body: {
       name: project.name,
       files: files.map(({ id, name, content }) => ({ id, name, content })),
-      messages: messages.slice(-500).map(({ id, role, content }) => ({ id, role, content }))
+      messages: messages.slice(-50).map(({ id, role, content }) => ({ id, role, content }))
     }
   });
 }
