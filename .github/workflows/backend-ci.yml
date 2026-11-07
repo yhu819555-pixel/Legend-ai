@@ -7,11 +7,19 @@ on:
       - "backend/**"
       - "mobile/**"
       - ".github/workflows/**"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - ".env.example"
+      - "DEPLOYMENT.md"
   pull_request:
     paths:
       - "backend/**"
       - "mobile/**"
       - ".github/workflows/**"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - ".env.example"
+      - "DEPLOYMENT.md"
 
 concurrency:
   group: project-ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -31,8 +39,8 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: npm test
-      - name: Validate Docker Compose configuration
-        run: POSTGRES_PASSWORD=test-password APP_API_TOKEN=test-token AI_API_KEY=sk-test docker compose config --quiet
+      - name: Validate production Docker Compose configuration
+        run: DOMAIN=api.example.com POSTGRES_PASSWORD=test-password APP_API_TOKEN=test-token AI_API_KEY=sk-test docker compose config --quiet
       - name: Build backend container image
         run: docker build -f backend/Dockerfile -t legend-ai-backend:test backend
 
@@ -67,7 +75,7 @@ jobs:
       - name: Generate native Android project
         working-directory: mobile
         run: npx expo prebuild --platform android --non-interactive
-      - name: Embed JavaScript bundle in debug APK
+      - name: Embed JavaScript bundle in APK
         working-directory: mobile
         run: |
           python3 - <<'PY'
@@ -79,12 +87,11 @@ jobs:
           if "debuggableVariants = []" not in content:
               content = content.replace("react {", "react {\n    // Bundle JS into the APK so it runs without Metro.\n    debuggableVariants = []", 1)
           path.write_text(content)
-          print("Configured debug variant to embed its JavaScript bundle")
           PY
       - name: Build debug APK
         working-directory: mobile/android
         run: ./gradlew assembleDebug
-      - name: Verify APK contains the embedded Android JS bundle
+      - name: Verify embedded Android JS bundle
         working-directory: mobile/android
         run: |
           APK=app/build/outputs/apk/debug/app-debug.apk
@@ -92,7 +99,6 @@ jobs:
           unzip -l "$APK" | grep -E 'assets/(index\.android\.bundle|.*\.bundle)$'
           unzip -p "$APK" assets/index.android.bundle > /tmp/index.android.bundle
           test -s /tmp/index.android.bundle
-          echo "Verified: APK includes a non-empty embedded Android JS bundle"
       - uses: actions/upload-artifact@v4
         with:
           name: my-ai-agent-debug-apk
