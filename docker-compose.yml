@@ -26,7 +26,7 @@ services:
       DATABASE_SSL: "false"
       APP_API_TOKEN: ${APP_API_TOKEN:?Set APP_API_TOKEN in your private .env file}
       AI_API_KEY: ${AI_API_KEY:?Set AI_API_KEY in your private .env file}
-      AI_MODEL: ${AI_MODEL:-gpt-6.1-sol}
+      AI_MODEL: ${AI_MODEL:-gpt-4.1-mini}
     ports:
       - "8080:8080"
     depends_on:
