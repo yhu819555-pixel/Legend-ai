@@ -1,3 +1,32 @@
+function timestampOf(item) {
+  const parsed = item?.createdAt ? Date.parse(item.createdAt) : NaN;
+  if (Number.isFinite(parsed)) return parsed;
+  const numericId = Number.parseInt(item?.id, 10);
+  return Number.isFinite(numericId) ? numericId : 0;
+}
+
+function mergeById(localItems, cloudItems, preferNewest = false) {
+  const merged = new Map();
+  for (const item of Array.isArray(localItems) ? localItems : []) {
+    if (item && typeof item.id === "string") merged.set(item.id, item);
+  }
+  for (const item of Array.isArray(cloudItems) ? cloudItems : []) {
+    if (!item || typeof item.id !== "string") continue;
+    const local = merged.get(item.id);
+    if (!local || (preferNewest && Date.parse(item.updatedAt || "") > Date.parse(local.updatedAt || ""))) {
+      merged.set(item.id, item);
+    }
+  }
+  return [...merged.values()].sort((a, b) => timestampOf(a) - timestampOf(b));
+}
+
+export function mergeProjectSnapshot(localData, cloudProject) {
+  return {
+    files: mergeById(localData?.files, cloudProject?.files, true),
+    messages: mergeById(localData?.messages, cloudProject?.messages)
+  };
+}
+
 export function mergeCloudProjectList(localProjects, cloudProjects) {
   if (!Array.isArray(cloudProjects)) return localProjects;
   const byId = new Map(localProjects.map((project) => [project.id, project]));

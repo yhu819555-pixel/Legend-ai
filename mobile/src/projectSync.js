@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { readProjectFiles } from "./projectFiles.js";
 import { STORAGE_KEY } from "./projectStore.js";
+import { mergeProjectSnapshot } from "./projectSyncUtils.js";
 export { mergeCloudProjectList } from "./projectSyncUtils.js";
 
 const URL_KEY = "legend_ai_backend_url";
@@ -79,13 +80,23 @@ export async function ensureCloudProject(project, storage = AsyncStorage) {
 export async function pullCloudProject(projectId, storage = AsyncStorage) {
   const result = await request("/v1/projects/" + encodeURIComponent(projectId));
   if (!result?.project) return null;
-  const project = result.project;
+  const cloudProject = result.project;
   const localProjectsRaw = await storage.getItem(STORAGE_KEY);
   const localProjects = localProjectsRaw ? JSON.parse(localProjectsRaw) : [];
+  const localProject = localProjects.find((item) => item.id === projectId);
+  const [localFiles, localMessagesRaw] = await Promise.all([
+    readProjectFiles(storage, projectId),
+    storage.getItem(chatKey(projectId))
+  ]);
+  const localMessages = localMessagesRaw ? JSON.parse(localMessagesRaw) : [];
+  const merged = mergeProjectSnapshot(
+    { files: localFiles, messages: localMessages },
+    cloudProject
+  );
+  const project = { ...cloudProject, files: merged.files, messages: merged.messages };
   const nextProjects = [project, ...localProjects.filter((item) => item.id !== projectId)];
   await storage.setItem(STORAGE_KEY, JSON.stringify(nextProjects));
-  await storage.setItem("@legend-ai/project-files/" + projectId, JSON.stringify(project.files || []));
-  await storage.setItem(chatKey(projectId), JSON.stringify(project.messages || []));
+  await storage.setItem("@legend-ai/project-files/" + projectId, JSON.stringify(merged.files));
+  await storage.setItem(chatKey(projectId), JSON.stringify(merged.messages));
   return project;
 }
-
