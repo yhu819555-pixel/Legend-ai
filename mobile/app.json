@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "My AI Agent",
+    "slug": "my-ai-agent",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.legendai.agent"
+    }
+  }
+}
