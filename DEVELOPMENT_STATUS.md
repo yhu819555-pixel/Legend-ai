@@ -7,15 +7,16 @@
 - [x] Environment template contains placeholders only; no credentials.
 - [x] Expo React Native Android app scaffold added.
 - [x] Local project create/open flow with AsyncStorage persistence added.
-- [x] Project persistence extracted into testable helpers.
+- [x] Project persistence and project creation actions extracted into testable helpers.
 - [x] Mobile project persistence unit tests added (5 cases).
+- [x] Project creation action tests added (3 cases); CI verification pending.
 - [x] Backend Node.js HTTP service scaffold and health endpoint added.
 - [x] Backend route tests added (2 cases).
 - [x] CI expanded to run backend tests, mobile tests, Expo doctor, Android JS bundle export, native debug APK build and emulator launch smoke test.
 
 ## Pending features
-- [ ] Confirm latest full Project CI run passes all jobs, including APK build and emulator smoke test.
-- [ ] Download and inspect the debug APK artifact after CI build; physical installation remains to be verified.
+- [ ] Confirm the latest CI run passes the expanded mobile tests, APK build and emulator install/launch smoke test.
+- [ ] Download and inspect the debug APK artifact after the latest green CI run; physical installation remains to be verified.
 - [ ] Confirm automated Android emulator install/launch smoke test passes; manually verify UI interactions.
 - [ ] Add backend authentication and authorization.
 - [ ] Add database, versioned migrations, backup and restore tests.
@@ -30,23 +31,27 @@
 
 ## Known bugs / limitations
 - The mobile project list is stored locally on the device; it is not synced to the backend.
+- A real app-flow bug was found during source review: the screen handler shadowed the imported project factory. The handler was renamed and the create/save flow extracted into a tested action; expanded CI verification is pending.
 - The workspace screen is an explicit placeholder; AI chat, file tools and command runner are not implemented.
 - The backend currently exposes only a health endpoint; no user data or AI provider calls are implemented.
 - No database, cloud workspace provider, provider credentials, APK or physical-device test is configured.
 - The mobile test suite currently tests project storage helpers, not rendered UI behavior.
 
 ## Test results
-- Combined local verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
+- Previous combined verification: PASS (2 backend + 5 mobile unit tests; 7 total, 0 failures).
+- Expanded verification now contains 2 backend + 8 mobile unit tests (10 total); new project-action tests are awaiting CI execution.
 - Previous backend CI run: PASS (2 backend tests).
 - Mobile unit tests: PASS (5/5 locally; CI run also reported 5/5 on the first combined run).
 - Expo dependency compatibility / doctor: PASS after correcting React Native from 0.81.4 to SDK-required 0.81.5.
 - Android JavaScript bundle export: PASS in corrected CI.
-- Android native prebuild: PASS. Android SDK setup: PASS after removing obsolete default `tools` package. Debug APK build: currently running in CI. Emulator launch and physical-device install: pending.
+- Android native prebuild: PASS. Android SDK setup: PASS after removing obsolete default `tools` package. Debug APK build: PASS in CI.
+- Emulator install succeeded in an earlier run, but its process-check shell script failed due to a multiline-shell invocation issue. The check was simplified to a single command; latest emulator verification is pending.
+- Physical-device install: pending.
 - AI streaming / file tools / isolated execution / Git commit: NOT IMPLEMENTED, NOT RUN.
 - No test result is marked PASS until the corresponding CI job or device test completes successfully.
 
 ## Current working stage
-Stage 2 — Android project create/open and local persistence, plus backend health foundation. Verification is being expanded to cover backend and mobile code together.
+Stage 2 — Android project create/open and local persistence, plus backend health foundation. The Android debug APK now builds in CI; emulator launch and expanded project-action test verification remain in progress.
 
 ## Required credentials / decisions
 - Choose one AI provider and add its API key to backend secret storage only.
