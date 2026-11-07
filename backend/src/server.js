@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { createOpenAIProvider } from "./providers/openai.js";
+import { createDatabase } from "./database.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const MAX_BODY_BYTES = 64 * 1024;
@@ -241,5 +242,7 @@ export function createApp({ provider = createOpenAIProvider(), apiToken = proces
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  createApp().listen(port, "0.0.0.0", () => console.log("API listening on port " + port));
+  const projectStore = process.env.DATABASE_URL ? await createDatabase() : null;
+  if (projectStore) await projectStore.migrate();
+  createApp({ projectStore }).listen(port, "0.0.0.0", () => console.log("API listening on port " + port));
 }
