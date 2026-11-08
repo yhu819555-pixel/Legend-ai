@@ -154,6 +154,39 @@ export function GitHubOverview({ colors, connected, owner, repo, branch, onConne
 }
 
 
+
+export function TerminalView({ colors }) {
+  return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+    <Surface colors={colors}>
+      <View style={styles.sectionRow}><Text style={[styles.sectionTitle, { color: colors.text }]}>Terminal</Text><Text style={{ color: colors.warning, fontSize: 10, fontWeight: "900" }}>OFFLINE</Text></View>
+      <Text style={{ color: colors.muted, lineHeight: 20 }}>A mobile terminal workspace layout is ready, but no isolated command runner is connected.</Text>
+      <View style={[styles.terminalPanel, { backgroundColor: "#070B13", borderColor: colors.border }]}>
+        <Text style={{ color: "#75D6A3", fontFamily: "monospace", fontSize: 11 }}>MY AI AGENT / workspace</Text>
+        <Text style={{ color: "#AAB7CF", fontFamily: "monospace", fontSize: 12, marginTop: 12 }}>$ Command execution unavailable</Text>
+        <Text style={{ color: "#74839C", fontFamily: "monospace", fontSize: 10, marginTop: 6 }}>Connect a secure sandbox before running code.</Text>
+      </View>
+      <TextInput editable={false} value="" placeholder="Command input unavailable" placeholderTextColor={colors.muted} style={[styles.search, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface2, marginTop: 2, marginBottom: 0 }]}/>
+      <View style={styles.row}><ActionButton label="Run (unavailable)" colors={colors} disabled/><ActionButton label="Stop (unavailable)" colors={colors} secondary disabled/></View>
+      <Text style={[styles.note, { color: colors.warning }]}>No command is sent or executed from this screen.</Text>
+    </Surface>
+  </ScrollView>;
+}
+
+export function PreviewView({ colors }) {
+  return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+    <Surface colors={colors}>
+      <View style={styles.sectionRow}><Text style={[styles.sectionTitle, { color: colors.text }]}>App preview</Text><Text style={{ color: colors.warning, fontSize: 10, fontWeight: "900" }}>NOT RUNNING</Text></View>
+      <View style={[styles.previewPanel, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+        <Text style={{ color: colors.accent2, fontSize: 32 }}>▣</Text>
+        <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800", marginTop: 8 }}>Preview not available</Text>
+        <Text style={{ color: colors.muted, textAlign: "center", lineHeight: 19, marginTop: 6 }}>A preview server and app runtime are not connected to this build.</Text>
+      </View>
+      <View style={styles.row}><ActionButton label="Start (unavailable)" colors={colors} disabled/><ActionButton label="Refresh (unavailable)" colors={colors} secondary disabled/></View>
+      <Text style={[styles.note, { color: colors.warning }]}>No preview session is created. This panel is a placeholder for a future real runtime.</Text>
+    </Surface>
+  </ScrollView>;
+}
+
 export function ToolsView({ colors }) {
   return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
     <Surface colors={colors}>
@@ -235,7 +268,7 @@ const styles = StyleSheet.create({
   note: { fontSize: 10, lineHeight: 16, marginTop: 5 },
   search: { borderWidth: 1, borderRadius: 13, padding: 13, fontSize: 14, marginTop: 8, marginBottom: 14 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  taskInput: { minHeight: 110, maxHeight: 180, borderWidth: 1, borderRadius: 13, padding: 12, textAlignVertical: "top", marginTop: 12, marginBottom: 8 },
+  taskInput: { minHeight: 110, maxHeight: 180, borderWidth: 1, borderRadius: 13, padding: 12, textAlignVertical: "top", marginTop: 12, marginBottom: 8 },\n  terminalPanel: { borderWidth: 1, borderRadius: 12, padding: 14, minHeight: 160, marginTop: 10 },\n  previewPanel: { minHeight: 240, borderWidth: 1, borderRadius: 14, alignItems: "center", justifyContent: "center", padding: 22, marginTop: 12 },
   capability: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 7 },
   unavailableWrap: { flex: 1, padding: 24, alignItems: "center", justifyContent: "center" },
   unavailableIcon: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 16 },
