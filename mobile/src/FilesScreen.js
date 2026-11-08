@@ -1,13 +1,15 @@
 import React,{useEffect,useState} from "react";
 import {ActivityIndicator,Alert,FlatList,Pressable,StyleSheet,Text,TextInput,View} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import {createProjectFile,deleteProjectFile,readProjectFiles,saveProjectFile} from "./projectFiles.js";
 import {pickTextFile} from "./nativeFiles.js";
-import {pullProjectFromGitHub,pushProjectToGitHub} from "./githubSync.js";
-export default function FilesScreen({project}){
+import {GITHUB_SETTING_KEYS,pullProjectFromGitHub,pushProjectToGitHub} from "./githubSync.js";
+export default function FilesScreen({project,onOpenSettings}){
  const [files,setFiles]=useState([]),[editing,setEditing]=useState(null),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[importing,setImporting]=useState(false),[syncing,setSyncing]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  async function load(){setLoading(true);setError("");try{setFiles(await readProjectFiles(AsyncStorage,project.id));}catch{setError("Project files load nahi hui.");}finally{setLoading(false);}}
  useEffect(()=>{load();},[project.id]);
+ useEffect(()=>{let active=true;SecureStore.getItemAsync(GITHUB_SETTING_KEYS.token).then(token=>{if(active)setGithubConnected(Boolean(token));}).catch(()=>{});return()=>{active=false;};},[]);
  function newFile(){if(files.length>=10){setError("Ek project mein maximum 10 text files rakh sakte ho.");return;}setError("");setEditing({id:"",name:"",content:""});}
  async function importFile(){setImporting(true);setError("");try{const imported=await pickTextFile();if(!imported)return;if(files.length>=10)throw new RangeError("Ek project mein maximum 10 text files rakh sakte ho.");setFiles(await saveProjectFile(AsyncStorage,project.id,createProjectFile(imported.name,imported.content)));}catch(e){setError(e?.message||"File import nahi hui.");}finally{setImporting(false);}}
  async function save(){setSaving(true);setError("");try{const file=editing.id?{...editing,updatedAt:new Date().toISOString()}:createProjectFile(editing.name,editing.content);setFiles(await saveProjectFile(AsyncStorage,project.id,file));setEditing(null);}catch(e){setError(e?.message||"File save nahi hui.");}finally{setSaving(false);}}
@@ -17,7 +19,7 @@ export default function FilesScreen({project}){
  return <View style={styles.screen}>
   <View style={styles.headingRow}><View><Text style={styles.title}>Project files</Text><Text style={styles.subtitle}>{project.name} · {files.length}/10 files</Text></View><View style={styles.actions}><Pressable onPress={importFile} disabled={importing||loading||syncing} style={styles.import}><Text style={styles.importText}>{importing?"Importing…":"Import"}</Text></Pressable><Pressable onPress={newFile} disabled={importing||syncing} style={styles.add}><Text style={styles.addText}>+ New</Text></Pressable></View></View>
   <Text style={styles.description}>Files phone par save rehti hain. GitHub sync karne par project folder `legend-ai-projects/{project.id}` mein copy hoga.</Text>
-  <View style={styles.syncRow}><Pressable onPress={()=>sync("pull")} disabled={syncing||loading} style={styles.syncButton}>{syncing?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.syncText}>↓ Pull GitHub</Text>}</Pressable><Pressable onPress={()=>sync("push")} disabled={syncing||loading} style={styles.syncButton}><Text style={styles.syncText}>↑ Push GitHub</Text></Pressable></View>
+  {githubConnected?<View style={styles.syncRow}><Pressable onPress={()=>sync("pull")} disabled={syncing||loading} style={styles.syncButton}>{syncing?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.syncText}>↓ Pull backup</Text>}</Pressable><Pressable onPress={()=>sync("push")} disabled={syncing||loading} style={styles.syncButton}><Text style={styles.syncText}>↑ Save backup</Text></Pressable></View>:<Pressable onPress={onOpenSettings} style={styles.syncButton}><Text style={styles.syncText}>Connect optional backup</Text></Pressable>}
   {notice?<Text style={styles.notice}>{notice}</Text>:null}{error?<Text style={styles.error}>{error}</Text>:null}
   {loading?<ActivityIndicator color="#a9bcff" style={styles.loader}/>:<FlatList data={files} keyExtractor={item=>item.id} contentContainerStyle={files.length?styles.list:styles.empty} ListEmptyComponent={<Text style={styles.emptyText}>No project files yet. Create or import a file to give AI code or notes to inspect.</Text>} renderItem={({item})=><Pressable onPress={()=>setEditing(item)} style={styles.file}><View style={styles.fileIcon}><Text style={styles.fileIconText}>{"{ }"}</Text></View><View style={styles.fileInfo}><Text style={styles.fileName}>{item.name}</Text><Text style={styles.filePreview} numberOfLines={1}>{item.content||"Empty file"}</Text></View><Text style={styles.arrow}>›</Text></Pressable>}/>}
   <Text style={styles.footnote}>Local project documents · Max 12,000 total characters sent as AI context</Text>
