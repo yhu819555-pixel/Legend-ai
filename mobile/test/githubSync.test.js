@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {getGitHubConfig,pushProjectToGitHub,pullProjectFromGitHub} from "../src/githubSync.js";
+import {decodeGitHubContent,encodeGitHubContent,getGitHubConfig,pushProjectToGitHub,pullProjectFromGitHub} from "../src/githubSync.js";
 const values=new Map([["legend_ai_github_token","github_pat_test"],["legend_ai_github_owner","owner"],["legend_ai_github_repo","repo"],["legend_ai_github_branch","main"]]);
 const store={getItemAsync:async k=>values.get(k)||null};
 function storageMock(initial=[]){const map=new Map([["@legend-ai/project-files/p1",JSON.stringify(initial)]]);return{getItem:async k=>map.get(k)||null,setItem:async(k,v)=>map.set(k,v),map};}
@@ -15,3 +15,5 @@ test("GitHub device flow returns pending while user has not approved",async()=>{
 test("OAuth token refresh persists rotated access and refresh tokens",async()=>{const {getGitHubConfig}=await import("../src/githubSync.js");const local=new Map(values);local.set("legend_ai_github_oauth_client_id","client-id");local.set("legend_ai_github_refresh_token","refresh-old");local.set("legend_ai_github_expires_at","1");const secure={getItemAsync:async k=>local.get(k)||null,setItemAsync:async(k,v)=>local.set(k,v)};const cfg=await getGitHubConfig(secure);let request;const response=await (await import("../src/githubSync.js")).testGitHubConnection({config:cfg,fetchImpl:async(url,options)=>{if(url.includes("login/oauth/access_token")){request={url,options};return{ok:true,json:async()=>({access_token:"new-token",refresh_token:"refresh-new",expires_in:28800})};}return{ok:true,json:async()=>({full_name:"owner/repo",default_branch:"main",private:false})};}});assert.equal(response.fullName,"owner/repo");assert.equal(cfg.token,"new-token");assert.equal(local.get("legend_ai_github_refresh_token"),"refresh-new");assert.match(request.options.body,/grant_type=refresh_token/);});
 
 test("GitHub device flow returns refresh token and expiry metadata",async()=>{const result=await (await import("../src/githubSync.js")).pollGitHubDeviceFlow({clientId:"client-id",deviceCode:"device",fetchImpl:async()=>({ok:true,json:async()=>({access_token:"gho_access",refresh_token:"ghr_refresh",expires_in:28800,refresh_token_expires_in:15897600})})});assert.equal(result.status,"complete");assert.equal(result.accessToken,"gho_access");assert.equal(result.refreshToken,"ghr_refresh");assert.equal(result.expiresIn,28800);});
+
+test("GitHub Base64 encoding round-trips Unicode without TextEncoder globals",()=>{const value="नमस्ते 🌟 café — Legend AI";assert.equal(decodeGitHubContent(encodeGitHubContent(value)),value);assert.equal(decodeGitHubContent(""),"");});

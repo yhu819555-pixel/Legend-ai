@@ -32,20 +32,29 @@ export async function getGitHubAccount({token,fetchImpl=fetch}={}) {
  return response.json();
 }
 
-function encodeBase64(value){
- const bytes=new TextEncoder().encode(String(value));
- let binary="";for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);
- if(typeof btoa!=="function")throw new Error("Base64 encoder unavailable on this device.");
- return btoa(binary);
+const BASE64_ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+export function encodeGitHubContent(value){
+ const binary=encodeURIComponent(String(value)).replace(/%([0-9A-F]{2})/gi,(_,hex)=>String.fromCharCode(parseInt(hex,16)));
+ let output="";
+ for(let i=0;i<binary.length;i+=3){
+  const a=binary.charCodeAt(i),b=i+1<binary.length?binary.charCodeAt(i+1):0,c=i+2<binary.length?binary.charCodeAt(i+2):0;
+  output+=BASE64_ALPHABET[a>>2]+BASE64_ALPHABET[((a&3)<<4)|(b>>4)]+(i+1<binary.length?BASE64_ALPHABET[((b&15)<<2)|(c>>6)]:"=")+(i+2<binary.length?BASE64_ALPHABET[c&63]:"=");
+ }
+ return output;
 }
-function decodeBase64(value){
- const clean=String(value||"").replace(/\s/g,"");
- if(typeof atob!=="function")throw new Error("Base64 decoder unavailable on this device.");
- const binary=atob(clean),bytes=new Uint8Array(binary.length);
- for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
- return new TextDecoder().decode(bytes);
+export function decodeGitHubContent(value){
+ const clean=String(value||"").replace(/\\s/g,"");
+ if(!clean)return "";
+ if(clean.length%4!==0)throw new Error("GitHub file content ka Base64 format invalid hai.");
+ const bytes=[];
+ for(let i=0;i<clean.length;i+=4){
+  const a=BASE64_ALPHABET.indexOf(clean[i]),b=BASE64_ALPHABET.indexOf(clean[i+1]),c=clean[i+2]==="="?0:BASE64_ALPHABET.indexOf(clean[i+2]),d=clean[i+3]==="="?0:BASE64_ALPHABET.indexOf(clean[i+3]);
+  if(a<0||b<0||c<0||d<0)throw new Error("GitHub file content ka Base64 format invalid hai.");
+  const n=(a<<18)|(b<<12)|(c<<6)|d;bytes.push((n>>16)&255);if(clean[i+2]!=="=")bytes.push((n>>8)&255);if(clean[i+3]!=="=")bytes.push(n&255);
+ }
+ const escaped=bytes.map(byte=>"%"+byte.toString(16).padStart(2,"0")).join("");
+ try{return decodeURIComponent(escaped);}catch{throw new Error("GitHub file UTF-8 content decode nahi hua.");}
 }
-
 async function refreshGitHubToken(config,fetchImpl=fetch) {
  if(!config.refreshToken||!config.clientId||!config.expiresAt||Date.now()<config.expiresAt-60000)return;
  const response=await fetchImpl("https://github.com/login/oauth/access_token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(config.clientId)+"&grant_type=refresh_token&refresh_token="+encodeURIComponent(config.refreshToken)});
@@ -74,7 +83,7 @@ export async function pushProjectToGitHub(project,storage,{config:provided,store
  for(const file of files){
   const path=base+"/"+encodeURIComponent(file.name);
   let sha;try{const current=await github("/repos/"+config.owner+"/"+config.repo+"/contents/"+path+"?ref="+encodeURIComponent(config.branch),{config,fetchImpl});sha=current.sha;}catch(error){if(error.status!==404)throw error;}
-  await github("/repos/"+config.owner+"/"+config.repo+"/contents/"+path,{method:"PUT",config,fetchImpl,body:{message:"Legend AI: sync "+file.name,content:encodeBase64(file.content),branch:config.branch,...(sha?{sha}:{})}});
+  await github("/repos/"+config.owner+"/"+config.repo+"/contents/"+path,{method:"PUT",config,fetchImpl,body:{message:"Legend AI: sync "+file.name,content:encodeGitHubContent(file.content),branch:config.branch,...(sha?{sha}:{})}});
  }
  return {pushed:files.length,repository:config.owner+"/"+config.repo,path:base};
 }
@@ -89,7 +98,7 @@ export async function pullProjectFromGitHub(project,storage,{config:provided,sto
   if(entry.type!=="file"||entry.size>20000||!entry.name||entry.name.includes("/")||entry.name==="."||entry.name==="..")continue;
   const detail=await github("/repos/"+config.owner+"/"+config.repo+"/contents/"+base+"/"+encodeURIComponent(entry.name)+"?ref="+encodeURIComponent(config.branch),{config,fetchImpl});
   if(detail.encoding!=="base64"||typeof detail.content!=="string")continue;
-  const content=decodeBase64(detail.content),existing=local.find(item=>item.name===entry.name);
+  const content=decodeGitHubContent(detail.content),existing=local.find(item=>item.name===entry.name);
   await saveProjectFile(storage,project.id,{id:existing?.id||"",name:entry.name,content});
   pulled++;
  }
