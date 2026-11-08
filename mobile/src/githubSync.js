@@ -56,7 +56,8 @@ async function refreshGitHubToken(config,fetchImpl=fetch) {
  config.expiresAt=Date.now()+(Number(data.expires_in)||28800)*1000;
  if(config.store){await config.store.setItemAsync(KEYS.token,config.token);if(data.refresh_token)await config.store.setItemAsync(KEYS.refreshToken,config.refreshToken);await config.store.setItemAsync(KEYS.expiresAt,String(config.expiresAt));}
 }
-async function github(path,{method="GET",body,config,fetchImpl=fetch}={}){\n await refreshGitHubToken(config,fetchImpl);
+async function github(path,{method="GET",body,config,fetchImpl=fetch}={}){
+ await refreshGitHubToken(config,fetchImpl);
  const response=await fetchImpl("https://api.github.com"+path,{method,headers:{authorization:"Bearer "+config.token,accept:"application/vnd.github+json","x-github-api-version":"2022-11-28",...(body?{"content-type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
  if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}const error=new Error("GitHub API "+response.status+(detail?": "+detail:""));error.status=response.status;throw error;}
  return response.status===204?{}:response.json();
