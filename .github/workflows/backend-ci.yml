@@ -47,6 +47,9 @@ jobs:
 
   mobile-tests-and-bundle:
     runs-on: ubuntu-latest
+    env:
+      # Public OAuth App Client ID; configure once in repository Actions variables.
+      EXPO_PUBLIC_GITHUB_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GITHUB_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
