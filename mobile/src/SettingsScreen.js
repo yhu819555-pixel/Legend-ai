@@ -19,7 +19,7 @@ export default function SettingsScreen({onBack}){
  const [repo,setRepo]=useState("");
  const [branch,setBranch]=useState("main");
  const [hasGhToken,setHasGhToken]=useState(false);
-  const [advancedOpen,setAdvancedOpen]=useState(false);
+ const [advancedOpen,setAdvancedOpen]=useState(false);
  const [connecting,setConnecting]=useState(false);
  const [deviceCode,setDeviceCode]=useState("");
  const [saving,setSaving]=useState(false);
@@ -77,7 +77,7 @@ export default function SettingsScreen({onBack}){
    const deadline=Date.now()+flow.expiresIn*1000;
    let delay=flow.interval*1000;
    let firstPoll=true;
-   while(firstPoll||Date.now()<deadline){
+   while(true){
     firstPoll=false;
     await new Promise(resolve=>setTimeout(resolve,delay));
     // Android may pause JS while Chrome is open. Poll only after returning to the app,
@@ -96,6 +96,7 @@ export default function SettingsScreen({onBack}){
      return;
     }
     if(result.status==="slow_down")delay+=5000;
+    if(Date.now()>=deadline)throw new Error("GitHub sign-in expired. Please try again.");
    }
    throw new Error("GitHub sign-in expired. Please try again.");
   }catch(error){setMessage(error.message||"GitHub connection failed.");}
