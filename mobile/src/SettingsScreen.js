@@ -19,8 +19,7 @@ export default function SettingsScreen({onBack}){
  const [repo,setRepo]=useState("");
  const [branch,setBranch]=useState("main");
  const [hasGhToken,setHasGhToken]=useState(false);
- const [clientId,setClientId]=useState(BUILT_IN_GITHUB_CLIENT_ID);
- const [advancedOpen,setAdvancedOpen]=useState(false);
+  const [advancedOpen,setAdvancedOpen]=useState(false);
  const [connecting,setConnecting]=useState(false);
  const [deviceCode,setDeviceCode]=useState("");
  const [saving,setSaving]=useState(false);
@@ -33,12 +32,10 @@ export default function SettingsScreen({onBack}){
    SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),
    SecureStore.getItemAsync(GITHUB_SETTING_KEYS.token),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.owner),
    SecureStore.getItemAsync(GITHUB_SETTING_KEYS.repo),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.branch),
-   SecureStore.getItemAsync(GITHUB_SETTING_KEYS.clientId)
   ]).then(([key,selectedModel,token,savedOwner,savedRepo,savedBranch,savedClientId])=>{
    if(!mounted)return;
    setHasKey(Boolean(key));setModel(selectedModel||DEFAULT_MODEL);setHasGhToken(Boolean(token));
    setOwner(savedOwner||"");setRepo(savedRepo||"");setBranch(savedBranch||"main");
-   if(!BUILT_IN_GITHUB_CLIENT_ID)setClientId(savedClientId||"");
   }).catch(()=>{if(mounted)setMessage("Could not load saved settings.");});
   return()=>{mounted=false;};
  },[]);
@@ -54,7 +51,6 @@ export default function SettingsScreen({onBack}){
    if(owner.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,owner.trim());
    if(repo.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.repo,repo.trim());
    await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.branch,branch.trim()||"main");
-   if(!BUILT_IN_GITHUB_CLIENT_ID&&clientId.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.clientId,clientId.trim());
    setApiKey("");setHasKey(Boolean(key)||hasKey);setMessage("Settings saved securely on this phone.");
   }catch{setMessage("Settings could not be saved. Please retry.");}
   finally{setSaving(false);}
@@ -73,8 +69,8 @@ export default function SettingsScreen({onBack}){
  async function connectGitHub(){
   setConnecting(true);setMessage("");setDeviceCode("");
   try{
-   const id=BUILT_IN_GITHUB_CLIENT_ID||clientId.trim()||await SecureStore.getItemAsync(GITHUB_SETTING_KEYS.clientId);
-   if(!id)throw new Error("GitHub backup is optional. The app publisher must configure its GitHub login, or enter an OAuth Client ID here.");
+   const id=BUILT_IN_GITHUB_CLIENT_ID;
+   if(!id)throw new Error("GitHub login abhi app publisher ki taraf se enable nahi hua hai. App publisher ko ek baar GitHub OAuth Client ID configure karni hogi.");
    const flow=await startGitHubDeviceFlow(id);
    setDeviceCode(flow.userCode);
    await Linking.openURL(flow.verificationUri);
@@ -89,7 +85,6 @@ export default function SettingsScreen({onBack}){
      if(result.expiresIn)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.expiresAt,String(Date.now()+result.expiresIn*1000));
      const account=await getGitHubAccount({token:result.accessToken});
      await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,account.login);
-     await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.clientId,id);
      setOwner(account.login);setHasGhToken(true);setDeviceCode("");
      setMessage("GitHub connected. Add a repository name below to enable optional backup.");
      return;
@@ -127,7 +122,6 @@ export default function SettingsScreen({onBack}){
   try{
    await Promise.all(Object.values(GITHUB_SETTING_KEYS).map(key=>SecureStore.deleteItemAsync(key)));
    setHasGhToken(false);setOwner("");setRepo("");setBranch("main");setDeviceCode("");
-   if(!BUILT_IN_GITHUB_CLIENT_ID)setClientId("");
    setMessage("GitHub account disconnected from this phone.");
   }catch{setMessage("Could not disconnect GitHub.");}
  }
@@ -154,8 +148,7 @@ export default function SettingsScreen({onBack}){
    <Text style={styles.chevron}>{advancedOpen?"−":"+"}</Text>
   </Pressable>
   {advancedOpen?<>
-   <Text style={styles.description}>GitHub is not required to use Legend AI. Connect it only if you want to back up project files. Your projects and chats remain on this phone.</Text>
-   {!BUILT_IN_GITHUB_CLIENT_ID?<><Text style={styles.label}>GITHUB OAUTH CLIENT ID</Text><TextInput value={clientId} onChangeText={setClientId} placeholder="Provided by the app publisher" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/></>:null}
+   <Text style={styles.description}>GitHub is optional. Tap Connect GitHub, enter the one-time code shown here on GitHub, and approve access. Your projects and chats remain on this phone.</Text>
    <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.secondary,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>{hasGhToken?"Reconnect GitHub":"Connect GitHub"}</Text>}</Pressable>
    {deviceCode?<Text style={styles.message}>Enter this code on GitHub: {deviceCode}</Text>:null}
    <Text style={styles.label}>REPOSITORY NAME</Text>
