@@ -22,7 +22,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [showImport, setShowImport] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
 
   async function loadProjects() {
@@ -49,7 +48,6 @@ export default function App() {
   async function restoreAndSyncBackup(source) {
     const result = await restoreBackup(AsyncStorage, source);
     setProjects(result.projects);
-    setShowImport(false);
     Alert.alert("Backup restored", result.restoredCount + " project(s) restore ho gaye.");
   }
 
@@ -132,7 +130,7 @@ export default function App() {
         <Pressable onPress={handleExportBackup} disabled={backupBusy} style={styles.backupButton}>
           <Text style={styles.backupButtonText}>{backupBusy ? "Please wait…" : "Export backup file"}</Text>
         </Pressable>
-        <Pressable onPress={() => setShowImport((value) => !value)} disabled={backupBusy} style={styles.backupButton}>
+        <Pressable onPress={handleImportBackupFile} disabled={backupBusy} style={styles.backupButton}>
           <Text style={styles.backupButtonText}>Import backup</Text>
         </Pressable>
       </View>
