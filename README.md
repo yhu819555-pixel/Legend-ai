@@ -26,3 +26,8 @@ A simple, local-first Android AI workspace built with Expo React Native.
 - Local storage is not an off-device backup; export backup files regularly.
 
 See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) for verified and pending work.
+
+
+## One-time GitHub login setup (app publisher)
+
+Legend AI uses GitHub OAuth Device Flow so users do not enter a Client ID or secret. The app publisher must register one GitHub OAuth App, enable **Device Flow**, and add its public Client ID as the repository Actions variable `EXPO_PUBLIC_GITHUB_CLIENT_ID` (Settings → Secrets and variables → Actions → Variables). The Android CI workflow injects this public value at build time. No OAuth client secret is used or shipped. End users only tap **Connect GitHub**, enter the one-time verification code on GitHub, and approve. If this variable is not configured, GitHub connection remains unavailable in that build. See [GitHub's OAuth app setup guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) and [Device Flow guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
