@@ -5,7 +5,8 @@ import * as SecureStore from "expo-secure-store";
 import {createProjectFile,deleteProjectFile,readProjectFiles,saveProjectFile} from "./projectFiles.js";
 import {pickTextFile} from "./nativeFiles.js";
 import {GITHUB_SETTING_KEYS,pullProjectFromGitHub,pushProjectToGitHub} from "./githubSync.js";
-export default function FilesScreen({project,onOpenSettings,theme="dark"}){\n const styles=useMemo(()=>makeStyles(theme),[theme]);
+export default function FilesScreen({project,onOpenSettings,theme="dark"}){
+ const styles=useMemo(()=>makeStyles(theme),[theme]);
  const [files,setFiles]=useState([]),[editing,setEditing]=useState(null),[search,setSearch]=useState(""),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[importing,setImporting]=useState(false),[syncing,setSyncing]=useState(false),[githubConnected,setGithubConnected]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
  async function load(){setLoading(true);setError("");try{setFiles(await readProjectFiles(AsyncStorage,project.id));}catch{setError("Project files load nahi hui.");}finally{setLoading(false);}}
  useEffect(()=>{load();},[project.id]);
