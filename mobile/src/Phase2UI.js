@@ -65,7 +65,7 @@ export function HomeDashboard({ projects, model, colors, onCreate, onOpen, onNav
     <View style={styles.stats}>
       <Surface colors={colors} style={styles.stat}><Text style={[styles.statNumber, { color: colors.text }]}>{projects.length}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>Projects</Text></Surface>
       <Surface colors={colors} style={styles.stat}><Text style={[styles.statNumber, { color: colors.text }]}>On device</Text><Text style={[styles.statLabel, { color: colors.muted }]}>Storage</Text></Surface>
-      <Surface colors={colors} style={styles.stat}><Text style={[styles.statNumber, { color: colors.good }]}>Ready</Text><Text style={[styles.statLabel, { color: colors.muted }]}>AI setup: {model}</Text></Surface>
+      <Surface colors={colors} style={styles.stat}><Text style={[styles.statNumber, { color: model === "API key needed" ? colors.warning : colors.good }]}>{model === "API key needed" ? "Setup" : "Ready"}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>AI setup: {model}</Text></Surface>
     </View>
     <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Quick actions</Text>
     <View style={styles.quickGrid}>
