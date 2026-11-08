@@ -153,6 +153,28 @@ export function GitHubOverview({ colors, connected, owner, repo, branch, onConne
   </ScrollView>;
 }
 
+
+export function ToolsView({ colors }) {
+  return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+    <Surface colors={colors}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Available AI project tools</Text>
+      <Text style={{ color: colors.muted, lineHeight: 20 }}>These tools are invoked by the existing AI chat service. File writes always ask for your approval.</Text>
+      {[
+        ["List project files", "Available", colors.good],
+        ["Read a project file", "Available", colors.good],
+        ["Create or update a file", "Approval required", colors.good],
+        ["Run shell commands", "Unavailable", colors.warning],
+        ["Run tests / repair failures", "Unavailable", colors.warning],
+        ["Start app preview", "Unavailable", colors.warning]
+      ].map(([name, status, tint]) => <View key={name} style={styles.capability}><Text style={{ color: tint }}>●</Text><Text style={{ color: colors.text, flex: 1, fontSize: 13 }}>{name}</Text><Text style={{ color: tint, fontSize: 10, fontWeight: "800" }}>{status}</Text></View>)}
+    </Surface>
+    <Surface colors={colors}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Permission and safety</Text>
+      <Text style={{ color: colors.muted, lineHeight: 20 }}>The current agent can read local project files and request approval before writing them. It does not execute arbitrary code or run commands inside the app.</Text>
+    </Surface>
+  </ScrollView>;
+}
+
 export function MoreMenu({ colors, onNavigate, current }) {
   const items = [
     ["Code Editor", "editor", "Edit project files"],
