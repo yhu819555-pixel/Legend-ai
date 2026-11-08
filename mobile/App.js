@@ -201,7 +201,7 @@ export default function App() {
           <Pressable onPress={() => changeTheme("light")} style={[styles.themeOption, { backgroundColor: theme === "light" ? colors.accent : colors.surface2 }]}><Text style={{ color: theme === "light" ? "#071020" : colors.text, fontWeight: "800", fontSize: 11 }}>Light</Text></Pressable>
         </View>
       </View>
-      <SettingsScreen onBack={() => { setScreen(settingsReturn); refreshConnections(); }}/>
+      <SettingsScreen theme={theme} onBack={() => { setScreen(settingsReturn); refreshConnections(); }}/>
     </View>;
   } else {
     body = <MoreMenu colors={colors} onNavigate={navigate} current={screen}/>;
