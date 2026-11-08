@@ -75,6 +75,7 @@ function projectPath(projectId){if(!/^[A-Za-z0-9._-]{1,100}$/.test(projectId))th
 export async function testGitHubConnection({config:provided,store,fetchImpl=fetch}={}){
  const config=provided||await getGitHubConfig(store);if(!config)throw new Error("Settings mein GitHub token, owner aur repository save karo.");
  const result=await github("/repos/"+encodeURIComponent(config.owner)+"/"+encodeURIComponent(config.repo),{config,fetchImpl});
+ if(result.private)throw new Error("Is version mein GitHub backup ke liye public repository chahiye. Private repository ko public_repo permission se access nahi kar sakte.");
  return {fullName:result.full_name,defaultBranch:result.default_branch,private:result.private};
 }
 export async function pushProjectToGitHub(project,storage,{config:provided,store,fetchImpl=fetch}={}){
