@@ -76,9 +76,7 @@ export default function SettingsScreen({onBack}){
    await Linking.openURL(flow.verificationUri);
    const deadline=Date.now()+flow.expiresIn*1000;
    let delay=flow.interval*1000;
-   let firstPoll=true;
    while(true){
-    firstPoll=false;
     await new Promise(resolve=>setTimeout(resolve,delay));
     // Android may pause JS while Chrome is open. Poll only after returning to the app,
     // and allow one final poll on resume even if the local deadline elapsed in background.
@@ -155,7 +153,7 @@ export default function SettingsScreen({onBack}){
    <Text style={styles.chevron}>{advancedOpen?"−":"+"}</Text>
   </Pressable>
   {advancedOpen?<>
-   <Text style={styles.description}>GitHub is optional. Tap Connect GitHub, enter the one-time code shown here on GitHub, and approve access. Your projects and chats remain on this phone.</Text>
+   <Text style={styles.description}>GitHub is optional. Tap Connect GitHub, then enter the code shown here at github.com/login/device and approve access. Your projects and chats remain on this phone.</Text>
    <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.secondary,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>{hasGhToken?"Reconnect GitHub":"Connect GitHub"}</Text>}</Pressable>
    {deviceCode?<Text style={styles.message}>Enter this code on GitHub: {deviceCode}</Text>:null}
    <Text style={styles.label}>REPOSITORY NAME</Text>
