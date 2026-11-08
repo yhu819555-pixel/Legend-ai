@@ -67,6 +67,10 @@ export function HomeDashboard({ projects, model, colors, onCreate, onOpen, onNav
       <Surface colors={colors} style={styles.stat}><Text style={[styles.statNumber, { color: colors.text }]}>On device</Text><Text style={[styles.statLabel, { color: colors.muted }]}>Storage</Text></Surface>
       <Surface colors={colors} style={styles.stat}><Text style={[styles.statNumber, { color: model === "API key needed" ? colors.warning : colors.good }]}>{model === "API key needed" ? "Setup" : "Ready"}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>AI setup: {model}</Text></Surface>
     </View>
+    <Surface colors={colors}>
+      <View style={styles.sectionRow}><View><Text style={{ color: colors.muted, fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>AI MODEL</Text><Text style={{ color: colors.text, fontSize: 14, fontWeight: "800", marginTop: 4 }}>{model}</Text></View><ActionButton label="Manage model" onPress={onSettings} colors={colors} secondary compact/></View>
+      <Text style={[styles.note, { color: colors.muted }]}>Usage information: API spend is billed by your provider. This app does not currently track tokens or cost.</Text>
+    </Surface>
     <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Quick actions</Text>
     <View style={styles.quickGrid}>
       {[
