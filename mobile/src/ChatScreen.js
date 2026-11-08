@@ -29,7 +29,7 @@ export default function ChatScreen({project}){
   try{
    await AsyncStorage.setItem(historyKey(project.id),JSON.stringify(next));
    const [apiKey,model,projectFiles]=await Promise.all([SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),readProjectFiles(AsyncStorage,project.id)]);
-   const answer=await sendChatMessage({apiKey,model:model||"gpt-4.1-mini",messages:next.slice(-30).map(({role,content:text})=>({role,content:text})),projectFiles,onToolCall:handleAgentToolCall,onDelta:delta=>setMessages(current=>current.map(item=>item.id===assistantId?{...item,content:delta}:item))});
+   const answer=await sendChatMessage({apiKey,model:model||"gpt-4.1-mini",messages:next.slice(-30).map(({role,content:text})=>({role,content:text})),projectFiles,onToolCall:handleAgentToolCall,onDelta:delta=>setMessages(current=>current.map(item=>item.id===assistantId?{...item,content:item.content+delta}:item))});
    const completed=[...next,{id:assistantId,role:"assistant",content:answer}];setMessages(completed);await AsyncStorage.setItem(historyKey(project.id),JSON.stringify(completed));
   }catch(cause){setMessages(next);setError(cause?.message||"Message send nahi hua. Internet aur API settings check karo.");}finally{setBusy(false);}
  }
