@@ -20,7 +20,7 @@ export async function startGitHubDeviceFlow(clientId,{fetchImpl=fetch}={}) {
 export async function pollGitHubDeviceFlow({clientId,deviceCode,fetchImpl=fetch}={}) {
  const response=await fetchImpl("https://github.com/login/oauth/access_token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(String(clientId||""))+"&device_code="+encodeURIComponent(String(deviceCode||""))+"&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"});
  const data=await response.json();
- if(data.access_token) return {status:"complete",accessToken:data.access_token,scope:data.scope};
+ if(data.access_token) return {status:"complete",accessToken:data.access_token,refreshToken:data.refresh_token||null,expiresIn:Number(data.expires_in)||null,refreshTokenExpiresIn:Number(data.refresh_token_expires_in)||null,scope:data.scope};
  if(data.error==="authorization_pending") return {status:"pending"};
  if(data.error==="slow_down") return {status:"slow_down"};
  if(data.error==="expired_token"||data.error==="access_denied") throw new Error(data.error_description||"GitHub authorization expired or was denied.");
