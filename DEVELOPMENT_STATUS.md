@@ -4,7 +4,8 @@
 - [x] Local-first Expo Android app: projects, chat history, settings and project text files.
 - [x] Local project/chat persistence and backup JSON export/import.
 - [x] Android file import and backup sharing.
-- [x] OpenAI Responses API direct streaming client; API key stored in Android SecureStore.
+- [x] OpenAI Responses API client; API key stored in Android SecureStore.
+- [x] AI project-file tools: list/read and user-approved create/update of local files.
 - [x] GitHub OAuth Device Flow sign-in code and SecureStore token persistence (requires a registered OAuth App Client ID with Device Flow enabled).
 - [x] GitHub repository connection test, including automatic default-branch selection.
 - [x] Push project text files to `legend-ai-projects/<project-id>/` in a configured branch.

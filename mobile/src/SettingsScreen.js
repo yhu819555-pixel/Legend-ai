@@ -54,7 +54,7 @@ export default function SettingsScreen({onBack}){
   {hasKey?<Pressable onPress={clearAI} style={styles.clear}><Text style={styles.clearText}>Remove OpenAI API key</Text></Pressable>:null}
   <View style={styles.separator}/>
   <Text style={styles.section}>GITHUB ACCOUNT CONNECTION</Text>
-  <Text style={styles.description}>GitHub OAuth App ka Client ID ek baar set karo. Connect dabane par GitHub ka official login page khulega; wahan code approve karo. Password ya Personal Access Token paste nahi karna. OAuth App ko GitHub mein register karna hoga.</Text>
+  <Text style={styles.description}>GitHub OAuth App ka Client ID ek baar set karo (GitHub Settings → Developer settings → OAuth Apps → New OAuth App; Device Flow enable karo). Connect dabane par GitHub ka official login page khulega; wahan code approve karo. Password ya token paste nahi karna. Public repo scope tumhare account ke sab public repos tak access de sakta hai; private repo support is OAuth setup mein nahi hai.</Text>
   <Text style={styles.label}>GITHUB OAUTH APP CLIENT ID</Text><TextInput value={clientId} onChangeText={setClientId} placeholder="Iv1.xxxxxxxxxxxxxxxx" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
   <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.button,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#09111f"/>:<Text style={styles.buttonText}>Connect GitHub account</Text>}</Pressable>
   {deviceCode?<Text style={styles.message}>GitHub par ye code enter karo: {deviceCode}</Text>:null}
