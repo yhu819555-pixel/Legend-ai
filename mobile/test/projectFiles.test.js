@@ -45,3 +45,10 @@ test("project files can be updated and deleted", async () => {
   assert.equal(updated[0].content, "new");
   assert.deepEqual(await deleteProjectFile(storage, "p", first.id), []);
 });
+
+
+test("project files reject duplicate names case-insensitively", async () => {
+  const storage = memoryStorage();
+  await saveProjectFile(storage, "p", createProjectFile("Main.js", "first"));
+  await assert.rejects(saveProjectFile(storage, "p", createProjectFile("main.js", "second")), /already exists/);
+});
