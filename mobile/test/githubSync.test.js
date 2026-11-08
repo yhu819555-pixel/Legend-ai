@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {decodeGitHubContent,encodeGitHubContent,getGitHubConfig,pushProjectToGitHub,pullProjectFromGitHub} from "../src/githubSync.js";
+import {decodeGitHubContent,encodeGitHubContent,getGitHubConfig,pushProjectToGitHub,pullProjectFromGitHub,testGitHubConnection} from "../src/githubSync.js";
 const values=new Map([["legend_ai_github_token","github_pat_test"],["legend_ai_github_owner","owner"],["legend_ai_github_repo","repo"],["legend_ai_github_branch","main"]]);
 const store={getItemAsync:async k=>values.get(k)||null};
 function storageMock(initial=[]){const map=new Map([["@legend-ai/project-files/p1",JSON.stringify(initial)]]);return{getItem:async k=>map.get(k)||null,setItem:async(k,v)=>map.set(k,v),map};}
