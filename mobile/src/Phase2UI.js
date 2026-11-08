@@ -241,7 +241,9 @@ export function BottomNavigation({ colors, current, onNavigate }) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 18, paddingBottom: 28, gap: 14 },\n  modalShade: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "center", padding: 22 },\n  modalCard: { borderWidth: 1, borderRadius: 20, padding: 18, gap: 12 },
+  content: { padding: 18, paddingBottom: 28, gap: 14 },
+  modalShade: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "center", padding: 22 },
+  modalCard: { borderWidth: 1, borderRadius: 20, padding: 18, gap: 12 },
   header: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 14 },
   headerLine: { flexDirection: "row", alignItems: "center", gap: 10 },
   back: { fontSize: 12, fontWeight: "800", marginBottom: 5 },
@@ -272,7 +274,9 @@ const styles = StyleSheet.create({
   note: { fontSize: 10, lineHeight: 16, marginTop: 5 },
   search: { borderWidth: 1, borderRadius: 13, padding: 13, fontSize: 14, marginTop: 8, marginBottom: 14 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  taskInput: { minHeight: 110, maxHeight: 180, borderWidth: 1, borderRadius: 13, padding: 12, textAlignVertical: "top", marginTop: 12, marginBottom: 8 },\n  terminalPanel: { borderWidth: 1, borderRadius: 12, padding: 14, minHeight: 160, marginTop: 10 },\n  previewPanel: { minHeight: 240, borderWidth: 1, borderRadius: 14, alignItems: "center", justifyContent: "center", padding: 22, marginTop: 12 },
+  taskInput: { minHeight: 110, maxHeight: 180, borderWidth: 1, borderRadius: 13, padding: 12, textAlignVertical: "top", marginTop: 12, marginBottom: 8 },
+  terminalPanel: { borderWidth: 1, borderRadius: 12, padding: 14, minHeight: 160, marginTop: 10 },
+  previewPanel: { minHeight: 240, borderWidth: 1, borderRadius: 14, alignItems: "center", justifyContent: "center", padding: 22, marginTop: 12 },
   capability: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 7 },
   unavailableWrap: { flex: 1, padding: 24, alignItems: "center", justifyContent: "center" },
   unavailableIcon: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 16 },
