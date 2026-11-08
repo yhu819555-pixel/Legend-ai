@@ -10,7 +10,8 @@ const DEFAULT_MODEL="gpt-4.1-mini";
 // Set EXPO_PUBLIC_GITHUB_CLIENT_ID in the release build to make GitHub login one-tap for every user.
 const BUILT_IN_GITHUB_CLIENT_ID=process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID||"";
 
-export default function SettingsScreen({onBack,theme="dark"}){\n const styles=useMemo(()=>makeStyles(theme),[theme]);
+export default function SettingsScreen({onBack,theme="dark"}){
+ const styles=useMemo(()=>makeStyles(theme),[theme]);
  const [apiKey,setApiKey]=useState("");
  const [model,setModel]=useState(DEFAULT_MODEL);
  const [hasKey,setHasKey]=useState(false);
