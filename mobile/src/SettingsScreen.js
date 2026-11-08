@@ -153,7 +153,7 @@ export default function SettingsScreen({onBack}){
    <Text style={styles.chevron}>{advancedOpen?"−":"+"}</Text>
   </Pressable>
   {advancedOpen?<>
-   <Text style={styles.description}>GitHub is optional. Tap Connect GitHub, then enter the code shown here at github.com/login/device and approve access. Your projects and chats remain on this phone.</Text>
+   <Text style={styles.description}>GitHub backup optional hai aur sirf public repositories support karta hai. Connect GitHub dabao, phir yahan dikhaya code github.com/login/device par enter karke approve karo. Projects aur chats phone par hi rahenge.</Text>
    <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.secondary,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>{hasGhToken?"Reconnect GitHub":"Connect GitHub"}</Text>}</Pressable>
    {deviceCode?<Text style={styles.message}>Enter this code on GitHub: {deviceCode}</Text>:null}
    <Text style={styles.label}>REPOSITORY NAME</Text>
