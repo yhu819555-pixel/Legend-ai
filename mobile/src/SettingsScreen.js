@@ -137,6 +137,13 @@ export default function SettingsScreen({onBack,theme="dark"}){\n const styles=us
   <Text style={styles.title}>Settings</Text>
   <Text style={styles.description}>Add your own OpenAI API key to use AI. Your key stays in this phone's secure storage. Every user can use their own key; no Legend AI account or server is required.</Text>
 
+  <Text style={styles.section}>PROFILE & PRIVACY</Text>
+  <View style={{backgroundColor:theme==="light"?"#E9EFF9":"#131f32",borderRadius:12,padding:13}}>
+   <Text style={{color:theme==="light"?"#17233B":"#f4f7ff",fontWeight:"800"}}>Local device profile</Text>
+   <Text style={styles.hint}>No MY AI AGENT account is required. Projects and chats stay on this phone; provider requests use your own API key.</Text>
+  </View>
+  <Text style={styles.section}>LANGUAGE</Text>
+  <Text style={styles.hint}>The current interface uses English with some Hindi guidance. In-app language switching is not implemented yet.</Text>
   <Text style={styles.section}>AI PROVIDER</Text>
   <Text style={styles.label}>OPENAI API KEY</Text>
   <TextInput value={apiKey} onChangeText={setApiKey} placeholder={hasKey?"Saved securely · enter a new key to replace":"Paste your API key"} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
@@ -147,6 +154,9 @@ export default function SettingsScreen({onBack,theme="dark"}){\n const styles=us
   <Pressable onPress={save} disabled={saving} style={[styles.button,saving&&styles.disabled]}>{saving?<ActivityIndicator color="#09111f"/>:<Text style={styles.buttonText}>Save settings</Text>}</Pressable>
   {hasKey?<Pressable onPress={clearAI} style={styles.clear}><Text style={styles.clearText}>Remove saved API key</Text></Pressable>:null}
 
+  <View style={styles.separator}/>
+  <Text style={styles.section}>AGENT PERMISSIONS</Text>
+  <Text style={styles.hint}>Project file creation and edits require an approval prompt in AI Chat. Shell/terminal access is disabled because no isolated execution service is connected.</Text>
   <View style={styles.separator}/>
   <Pressable onPress={()=>setAdvancedOpen(value=>!value)} style={styles.advancedHeader}>
    <View><Text style={styles.section}>OPTIONAL GITHUB BACKUP</Text><Text style={styles.hint}>Only needed if you want to sync project files.</Text></View>
