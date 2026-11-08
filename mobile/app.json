@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Legend AI",
+    "slug": "legend-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.legendai.agent"
+    }
+  }
+}

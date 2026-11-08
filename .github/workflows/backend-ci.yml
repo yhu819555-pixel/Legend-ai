@@ -1,0 +1,110 @@
+name: Project CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+      - "mobile/**"
+      - ".github/workflows/**"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - ".env.example"
+      - "DEPLOYMENT.md"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "mobile/**"
+      - ".github/workflows/**"
+      - "docker-compose.yml"
+      - "Caddyfile"
+      - ".env.example"
+      - "DEPLOYMENT.md"
+
+concurrency:
+  group: project-ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install backend production dependencies
+        working-directory: backend
+        run: npm install --omit=dev --no-audit --no-fund
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test
+      - name: Validate production Docker Compose configuration
+        run: DOMAIN=api.example.com POSTGRES_PASSWORD=test-password APP_API_TOKEN=test-token AI_API_KEY=sk-test docker compose config --quiet
+      - name: Build backend container image
+        run: docker build -f backend/Dockerfile -t legend-ai-backend:test backend
+
+  mobile-tests-and-bundle:
+    runs-on: ubuntu-latest
+    env:
+      # Public OAuth App Client ID; configure once in repository Actions variables.
+      EXPO_PUBLIC_GITHUB_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GITHUB_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package.json
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+      - name: Run mobile unit tests
+        working-directory: mobile
+        run: npm test
+      - name: Check Expo project health
+        working-directory: mobile
+        run: npx expo-doctor
+      - name: Export Android JavaScript bundle
+        working-directory: mobile
+        run: npx expo export --platform android --output-dir dist
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Generate native Android project
+        working-directory: mobile
+        run: npx expo prebuild --platform android --non-interactive
+      - name: Embed JavaScript bundle in APK
+        working-directory: mobile
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/build.gradle")
+          content = path.read_text()
+          if "react {" not in content:
+              raise SystemExit("React Gradle configuration not found")
+          if "debuggableVariants = []" not in content:
+              content = content.replace("react {", "react {\n    // Bundle JS into the APK so it runs without Metro.\n    debuggableVariants = []", 1)
+          path.write_text(content)
+          PY
+      - name: Build debug APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug
+      - name: Verify embedded Android JS bundle
+        working-directory: mobile/android
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -l "$APK" | grep -E 'assets/(index\.android\.bundle|.*\.bundle)$'
+          unzip -p "$APK" assets/index.android.bundle > /tmp/index.android.bundle
+          test -s /tmp/index.android.bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: my-ai-agent-debug-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
