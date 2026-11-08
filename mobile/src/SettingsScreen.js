@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from "react";
+import React,{useEffect,useMemo,useState} from "react";
 import {ActivityIndicator,AppState,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import * as SecureStore from "expo-secure-store";
 import {GITHUB_SETTING_KEYS,getGitHubAccount,pollGitHubDeviceFlow,startGitHubDeviceFlow,testGitHubConnection} from "./githubSync.js";
@@ -10,7 +10,7 @@ const DEFAULT_MODEL="gpt-4.1-mini";
 // Set EXPO_PUBLIC_GITHUB_CLIENT_ID in the release build to make GitHub login one-tap for every user.
 const BUILT_IN_GITHUB_CLIENT_ID=process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID||"";
 
-export default function SettingsScreen({onBack}){
+export default function SettingsScreen({onBack,theme="dark"}){\n const styles=useMemo(()=>makeStyles(theme),[theme]);
  const [apiKey,setApiKey]=useState("");
  const [model,setModel]=useState(DEFAULT_MODEL);
  const [hasKey,setHasKey]=useState(false);
@@ -168,27 +168,9 @@ export default function SettingsScreen({onBack}){
  </ScrollView>;
 }
 
-const styles=StyleSheet.create({
- screen:{flex:1,backgroundColor:"#09111f"},
- content:{padding:24,paddingTop:42,paddingBottom:50},
- back:{color:"#a9bcff",fontSize:16,fontWeight:"700",marginBottom:25},
- eyebrow:{color:"#8ea8ff",fontSize:11,fontWeight:"900",letterSpacing:2,marginBottom:8},
- title:{color:"#f4f7ff",fontSize:29,fontWeight:"800",marginBottom:8},
- description:{color:"#9ba8bf",lineHeight:20,fontSize:12,marginBottom:10},
- section:{color:"#a9bcff",fontSize:11,fontWeight:"900",letterSpacing:1.4,marginTop:20,marginBottom:5},
- label:{color:"#91a0bb",fontSize:10,fontWeight:"900",letterSpacing:1.1,marginBottom:7,marginTop:14},
- input:{backgroundColor:"#131f32",borderColor:"#263651",borderWidth:1,borderRadius:12,padding:14,color:"#fff",fontSize:14},
- hint:{color:"#7889a5",fontSize:11,marginTop:7},
- button:{marginTop:16,backgroundColor:"#a9bcff",borderRadius:12,padding:15,alignItems:"center"},
- buttonText:{color:"#09111f",fontWeight:"900"},
- secondary:{marginTop:14,backgroundColor:"#172640",borderRadius:12,padding:14,alignItems:"center"},
- secondaryText:{color:"#c3d0f2",fontWeight:"800"},
- disabled:{opacity:.45},
- clear:{padding:12,alignItems:"center"},
- clearText:{color:"#ffb6c5",fontWeight:"700",fontSize:12},
- separator:{height:1,backgroundColor:"#263651",marginTop:22},
- advancedHeader:{flexDirection:"row",alignItems:"center",justifyContent:"space-between"},
- chevron:{color:"#a9bcff",fontSize:24,padding:8},
- message:{color:"#c7d3ef",fontSize:12,marginTop:14,lineHeight:18},
- warning:{color:"#d7b98a",fontSize:11,lineHeight:17,marginTop:20}
-});
+function makeStyles(theme){
+ const light=theme==="light",bg=light?"#F3F6FC":"#09111f",surface=light?"#FFFFFF":"#131f32",surface2=light?"#E9EFF9":"#172640",border=light?"#D9E2F0":"#263651",text=light?"#17233B":"#f4f7ff",muted=light?"#65738D":"#9ba8bf",accent=light?"#4267e8":"#a9bcff",danger=light?"#C0445B":"#ffb6c5",notice=light?"#435B85":"#c7d3ef",warning=light?"#93621D":"#d7b98a";
+ return StyleSheet.create({
+ screen:{flex:1,backgroundColor:bg},content:{padding:24,paddingTop:24,paddingBottom:50},back:{color:accent,fontSize:16,fontWeight:"700",marginBottom:25},eyebrow:{color:accent,fontSize:11,fontWeight:"900",letterSpacing:2,marginBottom:8},title:{color:text,fontSize:29,fontWeight:"800",marginBottom:8},description:{color:muted,lineHeight:20,fontSize:12,marginBottom:10},section:{color:accent,fontSize:11,fontWeight:"900",letterSpacing:1.4,marginTop:20,marginBottom:5},label:{color:muted,fontSize:10,fontWeight:"900",letterSpacing:1.1,marginBottom:7,marginTop:14},input:{backgroundColor:surface,borderColor,borderWidth:1,borderRadius:12,padding:14,color:text,fontSize:14},hint:{color:muted,fontSize:11,marginTop:7},button:{marginTop:16,backgroundColor:accent,borderRadius:12,padding:15,alignItems:"center"},buttonText:{color:light?"#FFFFFF":"#09111f",fontWeight:"900"},secondary:{marginTop:14,backgroundColor:surface2,borderRadius:12,padding:14,alignItems:"center"},secondaryText:{color:text,fontWeight:"800"},disabled:{opacity:.45},clear:{padding:12,alignItems:"center"},clearText:{color:danger,fontWeight:"700",fontSize:12},separator:{height:1,backgroundColor:border,marginTop:22},advancedHeader:{flexDirection:"row",alignItems:"center",justifyContent:"space-between"},chevron:{color:accent,fontSize:24,padding:8},message:{color:notice,fontSize:12,marginTop:14,lineHeight:18},warning:{color:warning,fontSize:11,lineHeight:17,marginTop:20}
+ });
+}
