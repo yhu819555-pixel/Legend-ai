@@ -32,6 +32,8 @@ export async function readProjectFiles(storage, projectId) {
 export async function saveProjectFile(storage, projectId, file) {
   const files = await readProjectFiles(storage, projectId);
   const clean = createProjectFile(file.name, file.content, Date.now(), Math.random());
+  const duplicateName = files.find((item) => item.name.toLowerCase() === clean.name.toLowerCase() && item.id !== file.id);
+  if (duplicateName) throw new Error("A file with this name already exists in this project");
   const existingIndex = files.findIndex((item) => item.id === file.id);
   const saved = { ...clean, id: file.id || clean.id };
   const next = existingIndex >= 0
