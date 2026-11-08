@@ -12,7 +12,6 @@ export default function SettingsScreen({onBack}){
  async function save(){
   const key=apiKey.trim(),selectedModel=model.trim(),token=ghToken.trim(),cleanOwner=owner.trim(),cleanRepo=repo.trim(),cleanBranch=branch.trim()||"main";
   if(key&&!key.startsWith("sk-")){setMessage("OpenAI API key ka format check karo.");return;}
-  if(!key&&!hasKey){setMessage("OpenAI API key dalo.");return;}
   if(!selectedModel||selectedModel.length>80){setMessage("Valid model name dalo.");return;}
   if((token||cleanOwner||cleanRepo)&&(!cleanOwner||!cleanRepo||(!token&&!hasGhToken))){setMessage("GitHub sync ke liye token, owner aur repository teeno bharna zaroori hai.");return;}
   if(cleanOwner&&!/^[A-Za-z0-9-]{1,39}$/.test(cleanOwner)){setMessage("GitHub owner/username valid nahi hai.");return;}
@@ -24,7 +23,7 @@ export default function SettingsScreen({onBack}){
    if(cleanOwner)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,cleanOwner);
    if(cleanRepo)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.repo,cleanRepo);
    await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.branch,cleanBranch);if(clientId.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.clientId,clientId.trim());
-   setApiKey("");setGhToken("");setHasKey(true);setHasGhToken(Boolean(token)||hasGhToken);setMessage("AI aur GitHub settings phone ke Secure Storage mein save ho gayi.");
+   setApiKey("");setGhToken("");setHasKey(Boolean(key)||hasKey);setHasGhToken(Boolean(token)||hasGhToken);setMessage("Settings phone ke Secure Storage mein save ho gayi.");
   }catch{setMessage("Settings save nahi hui. Dobara try karo.");}finally{setSaving(false);}
  }
  async function testAI(){setTestingAI(true);setMessage("");try{const key=apiKey.trim()||await SecureStore.getItemAsync(API_KEY);const result=await testOpenAIConnection({apiKey:key,model});setMessage("OpenAI API working. Model: "+result.model+" · Test response: "+result.response);}catch(e){setMessage(e.message||"OpenAI test fail.");}finally{setTestingAI(false);}}
