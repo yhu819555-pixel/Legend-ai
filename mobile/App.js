@@ -175,12 +175,12 @@ export default function App() {
     body = loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 30 }}/> :
       <ProjectsView projects={projects} colors={colors} onOpen={openProject} onDelete={handleDeleteProject} onCreate={() => setShowCreate(true)}/>;
   } else if (screen === "chat") {
-    body = activeProject ? <ChatScreen project={activeProject}/> :
+    body = activeProject ? <ChatScreen project={activeProject} theme={theme} onOpenSettings={openSettings}/> :
       <UnavailableView colors={colors} title="Choose a project" subtitle="AI Chat works inside a project so it can use your local files as context." details="Open Projects and choose a project, or create a new one from Home."/>;
   } else if (screen === "workspace") {
     body = <WorkspaceView colors={colors} project={activeProject}/>;
   } else if (screen === "editor") {
-    body = activeProject ? <FilesScreen project={activeProject} onOpenSettings={openSettings}/> :
+    body = activeProject ? <FilesScreen project={activeProject} onOpenSettings={openSettings} theme={theme}/> :
       <UnavailableView colors={colors} title="No project selected" subtitle="The code editor opens files from a local project." details="Open or create a project first."/>;
   } else if (screen === "terminal") {
     body = <UnavailableView colors={colors} title="Terminal" subtitle="A terminal interface is prepared for this workspace." details="Command execution is not implemented. There is no isolated runner connected, so commands cannot safely be run from this app yet."/>;
