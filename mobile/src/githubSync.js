@@ -1,6 +1,6 @@
 import { readProjectFiles, saveProjectFile } from "./projectFiles.js";
 
-const KEYS={token:"legend_ai_github_token",owner:"legend_ai_github_owner",repo:"legend_ai_github_repo",branch:"legend_ai_github_branch"};
+const KEYS={token:"legend_ai_github_token",clientId:"legend_ai_github_oauth_client_id",owner:"legend_ai_github_owner",repo:"legend_ai_github_repo",branch:"legend_ai_github_branch"};
 export async function getGitHubConfig(store){
  const secureStore=store || await import("expo-secure-store");
  const [token,owner,repo,branch]=await Promise.all([secureStore.getItemAsync(KEYS.token),secureStore.getItemAsync(KEYS.owner),secureStore.getItemAsync(KEYS.repo),secureStore.getItemAsync(KEYS.branch)]);
@@ -8,6 +8,30 @@ export async function getGitHubConfig(store){
  if(!/^[A-Za-z0-9-]{1,39}$/.test(owner)||!/^[A-Za-z0-9._-]{1,100}$/.test(repo)||/[.]{2}/.test(repo))return null;
  return {token,owner,repo,branch:branch||"main"};
 }
+
+export async function startGitHubDeviceFlow(clientId,{fetchImpl=fetch}={}) {
+ const id=String(clientId||"").trim();
+ if(!id) throw new Error("GitHub OAuth App Client ID Settings mein dalo.");
+ const response=await fetchImpl("https://github.com/login/device/code",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(id)+"&scope=repo"});
+ const data=await response.json();
+ if(!response.ok||!data.device_code||!data.user_code) throw new Error(data.error_description||data.message||"GitHub sign-in shuru nahi hua.");
+ return {deviceCode:data.device_code,userCode:data.user_code,verificationUri:data.verification_uri||"https://github.com/login/device",expiresIn:Number(data.expires_in)||900,interval:Math.max(5,Number(data.interval)||5)};
+}
+export async function pollGitHubDeviceFlow({clientId,deviceCode,fetchImpl=fetch}={}) {
+ const response=await fetchImpl("https://github.com/login/oauth/access_token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(String(clientId||""))+"&device_code="+encodeURIComponent(String(deviceCode||""))+"&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"});
+ const data=await response.json();
+ if(data.access_token) return {status:"complete",accessToken:data.access_token,scope:data.scope};
+ if(data.error==="authorization_pending") return {status:"pending"};
+ if(data.error==="slow_down") return {status:"slow_down"};
+ if(data.error==="expired_token"||data.error==="access_denied") throw new Error(data.error_description||"GitHub authorization expired or was denied.");
+ throw new Error(data.error_description||data.message||"GitHub sign-in failed.");
+}
+export async function getGitHubAccount({token,fetchImpl=fetch}={}) {
+ const response=await fetchImpl("https://api.github.com/user",{headers:{authorization:"Bearer "+token,accept:"application/vnd.github+json","x-github-api-version":"2022-11-28"}});
+ if(!response.ok) throw new Error("GitHub account verify nahi hua ("+response.status+").");
+ return response.json();
+}
+
 function encodeBase64(value){
  const bytes=new TextEncoder().encode(String(value));
  let binary="";for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);

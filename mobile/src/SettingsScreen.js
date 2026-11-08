@@ -1,13 +1,14 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import * as SecureStore from "expo-secure-store";
-import {GITHUB_SETTING_KEYS,testGitHubConnection} from "./githubSync.js";
+import {GITHUB_SETTING_KEYS,getGitHubAccount,pollGitHubDeviceFlow,startGitHubDeviceFlow,testGitHubConnection} from "./githubSync.js";
+import {testOpenAIConnection} from "./chatClient.js";
 const API_KEY="legend_ai_provider_api_key",MODEL_KEY="legend_ai_model",DEFAULT_MODEL="gpt-4.1-mini";
 export default function SettingsScreen({onBack}){
- const [apiKey,setApiKey]=useState(""),[model,setModel]=useState(DEFAULT_MODEL),[hasKey,setHasKey]=useState(false);
- const [ghToken,setGhToken]=useState(""),[owner,setOwner]=useState(""),[repo,setRepo]=useState(""),[branch,setBranch]=useState("main"),[hasGhToken,setHasGhToken]=useState(false);
+ const [apiKey,setApiKey]=useState(""),[model,setModel]=useState(DEFAULT_MODEL),[hasKey,setHasKey]=useState(false),[testingAI,setTestingAI]=useState(false);
+ const [ghToken,setGhToken]=useState(""),[owner,setOwner]=useState(""),[repo,setRepo]=useState(""),[branch,setBranch]=useState("main"),[hasGhToken,setHasGhToken]=useState(false),[clientId,setClientId]=useState(""),[connecting,setConnecting]=useState(false),[deviceCode,setDeviceCode]=useState("");
  const [saving,setSaving]=useState(false),[testing,setTesting]=useState(false),[message,setMessage]=useState("");
- useEffect(()=>{let mounted=true;Promise.all([SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.token),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.owner),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.repo),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.branch)]).then(([key,m,t,o,r,b])=>{if(mounted){setHasKey(Boolean(key));setModel(m||DEFAULT_MODEL);setHasGhToken(Boolean(t));setOwner(o||"");setRepo(r||"");setBranch(b||"main");}}).catch(()=>{if(mounted)setMessage("Saved settings read nahi ho paayi.");});return()=>{mounted=false;};},[]);
+ useEffect(()=>{let mounted=true;Promise.all([SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.token),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.owner),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.repo),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.branch),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.clientId)]).then(([key,m,t,o,r,b,c])=>{if(mounted){setHasKey(Boolean(key));setModel(m||DEFAULT_MODEL);setHasGhToken(Boolean(t));setOwner(o||"");setRepo(r||"");setBranch(b||"main");setClientId(c||"");}}).catch(()=>{if(mounted)setMessage("Saved settings read nahi ho paayi.");});return()=>{mounted=false;};},[]);
  async function save(){
   const key=apiKey.trim(),selectedModel=model.trim(),token=ghToken.trim(),cleanOwner=owner.trim(),cleanRepo=repo.trim(),cleanBranch=branch.trim()||"main";
   if(key&&!key.startsWith("sk-")){setMessage("OpenAI API key ka format check karo.");return;}
@@ -22,13 +23,24 @@ export default function SettingsScreen({onBack}){
    if(token)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.token,token);
    if(cleanOwner)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,cleanOwner);
    if(cleanRepo)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.repo,cleanRepo);
-   await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.branch,cleanBranch);
+   await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.branch,cleanBranch);if(clientId.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.clientId,clientId.trim());
    setApiKey("");setGhToken("");setHasKey(true);setHasGhToken(Boolean(token)||hasGhToken);setMessage("AI aur GitHub settings phone ke Secure Storage mein save ho gayi.");
   }catch{setMessage("Settings save nahi hui. Dobara try karo.");}finally{setSaving(false);}
  }
- async function testGitHub(){setTesting(true);setMessage("");try{const result=await testGitHubConnection();setMessage("GitHub connected: "+result.fullName+" ("+(result.private?"private":"public")+")");}catch(e){setMessage(e.message||"GitHub connection fail.");}finally{setTesting(false);}}
+ async function testAI(){setTestingAI(true);setMessage("");try{const key=apiKey.trim()||await SecureStore.getItemAsync(API_KEY);const result=await testOpenAIConnection({apiKey:key,model});setMessage("OpenAI API working. Model: "+result.model+" · Test response: "+result.response);}catch(e){setMessage(e.message||"OpenAI test fail.");}finally{setTestingAI(false);}}
+ async function connectGitHub(){setConnecting(true);setMessage("");setDeviceCode("");try{
+  const id=clientId.trim()||await SecureStore.getItemAsync(GITHUB_SETTING_KEYS.clientId);
+  if(!id) throw new Error("GitHub OAuth App Client ID dalo. Password ya token share nahi karna.");
+  const flow=await startGitHubDeviceFlow(id);setDeviceCode(flow.userCode);await Linking.openURL(flow.verificationUri);
+  const deadline=Date.now()+flow.expiresIn*1000;let delay=flow.interval*1000;
+  while(Date.now()<deadline){await new Promise(resolve=>setTimeout(resolve,delay));const result=await pollGitHubDeviceFlow({clientId:id,deviceCode:flow.deviceCode});
+   if(result.status==="complete"){await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.token,result.accessToken);const account=await getGitHubAccount({token:result.accessToken});await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,account.login);await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.clientId,id);setOwner(account.login);setGhToken("");setHasGhToken(true);setDeviceCode("");setMessage("GitHub account connected: @"+account.login+". Repository name bharo aur Save all settings dabao.");return;}
+   if(result.status==="slow_down")delay+=5000;
+  }
+  throw new Error("GitHub sign-in code expire ho gaya. Dobara Connect dabao.");
+ }catch(e){setMessage(e.message||"GitHub connection fail.");}finally{setConnecting(false);}}
  async function clearAI(){try{await SecureStore.deleteItemAsync(API_KEY);setHasKey(false);setApiKey("");setMessage("OpenAI key phone se remove ho gayi.");}catch{setMessage("API key remove nahi ho paayi.");}}
- async function clearGitHub(){try{await Promise.all(Object.values(GITHUB_SETTING_KEYS).map(k=>SecureStore.deleteItemAsync(k)));setHasGhToken(false);setGhToken("");setOwner("");setRepo("");setBranch("main");setMessage("GitHub credentials phone se remove ho gaye.");}catch{setMessage("GitHub credentials remove nahi ho paaye.");}}
+ async function clearGitHub(){try{await Promise.all(Object.values(GITHUB_SETTING_KEYS).map(k=>SecureStore.deleteItemAsync(k)));setHasGhToken(false);setGhToken("");setOwner("");setRepo("");setBranch("main");setClientId("");setDeviceCode("");setMessage("GitHub credentials phone se remove ho gaye.");}catch{setMessage("GitHub credentials remove nahi ho paaye.");}}
  return <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
   <Pressable onPress={onBack}><Text style={styles.back}>‹  Back</Text></Pressable>
   <Text style={styles.eyebrow}>ON-DEVICE AI</Text><Text style={styles.title}>Settings</Text>
@@ -36,12 +48,18 @@ export default function SettingsScreen({onBack}){
   <Text style={styles.section}>OPENAI AI</Text><Text style={styles.label}>API KEY</Text>
   <TextInput value={apiKey} onChangeText={setApiKey} placeholder={hasKey?"Saved securely — enter new key to replace":"sk-..."} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
   <Text style={styles.hint}>{hasKey?"Key saved in Android SecureStore.":"No API key saved on this device."}</Text>
+  <Pressable onPress={testAI} disabled={testingAI} style={[styles.secondary,testingAI&&styles.disabled]}>{testingAI?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>Test OpenAI API</Text>}</Pressable>
   <Text style={styles.label}>MODEL</Text><TextInput value={model} onChangeText={setModel} placeholder={DEFAULT_MODEL} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
   {hasKey?<Pressable onPress={clearAI} style={styles.clear}><Text style={styles.clearText}>Remove OpenAI API key</Text></Pressable>:null}
   <View style={styles.separator}/>
+  <Text style={styles.section}>GITHUB ACCOUNT CONNECTION</Text>
+  <Text style={styles.description}>GitHub OAuth App ka Client ID ek baar set karo. Connect dabane par GitHub ka official login page khulega; wahan code approve karo. Password ya Personal Access Token paste nahi karna. OAuth App ko GitHub mein register karna hoga.</Text>
+  <Text style={styles.label}>GITHUB OAUTH APP CLIENT ID</Text><TextInput value={clientId} onChangeText={setClientId} placeholder="Iv1.xxxxxxxxxxxxxxxx" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
+  <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.button,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#09111f"/>:<Text style={styles.buttonText}>Connect GitHub account</Text>}</Pressable>
+  {deviceCode?<Text style={styles.message}>GitHub par ye code enter karo: {deviceCode}</Text>:null}
   <Text style={styles.section}>GITHUB BACKUP / SYNC</Text>
   <Text style={styles.description}>GitHub Personal Access Token (fine-grained) banao aur sirf apne repository ke liye Contents: Read and write permission do. Token isi phone mein SecureStore mein rahega. GitHub repo ka owner aur exact repository name bharo.</Text>
-  <Text style={styles.label}>GITHUB TOKEN</Text><TextInput value={ghToken} onChangeText={setGhToken} placeholder={hasGhToken?"Saved securely — enter new token to replace":"github_pat_..."} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
+  <Text style={styles.hint}>{hasGhToken?"GitHub account authorized on this phone.":"GitHub account not connected yet."}</Text>
   <Text style={styles.label}>GITHUB OWNER / USERNAME</Text><TextInput value={owner} onChangeText={setOwner} placeholder="your-github-username" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
   <Text style={styles.label}>REPOSITORY</Text><TextInput value={repo} onChangeText={setRepo} placeholder="Legend-ai" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
   <Text style={styles.label}>BRANCH</Text><TextInput value={branch} onChangeText={setBranch} placeholder="main" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>

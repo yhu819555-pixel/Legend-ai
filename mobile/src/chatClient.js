@@ -51,3 +51,18 @@ export async function sendChatMessage({ apiKey, model = "gpt-4.1-mini", messages
   if (!answer) throw new Error("AI se khaali response mila.");
   return answer;
 }
+
+export async function testOpenAIConnection({apiKey,model="gpt-4.1-mini",fetchImpl=fetch}={}) {
+ const key=String(apiKey||"").trim(),selectedModel=String(model||"gpt-4.1-mini").trim();
+ if(!key) throw new Error("Settings mein OpenAI API key save karo.");
+ const response=await fetchImpl("https://api.openai.com/v1/responses",{method:"POST",headers:{authorization:"Bearer "+key,"content-type":"application/json"},body:JSON.stringify({model:selectedModel,input:"Reply with exactly OK.",max_output_tokens:12})});
+ let data={}; try {data=await response.json();} catch {}
+ if(!response.ok) {
+  if(response.status===401) throw new Error("API key invalid ya inactive hai.");
+  if(response.status===429) throw new Error("OpenAI quota/billing ya rate limit issue hai.");
+  throw new Error(data.error?.message||("OpenAI request failed ("+response.status+")."));
+ }
+ const answer=data.output_text||data.output?.flatMap(item=>item.content||[]).find(item=>item.type==="output_text")?.text||"";
+ if(!answer) throw new Error("OpenAI connected hua, lekin test response khaali mila.");
+ return {model:data.model||selectedModel,response:answer};
+}
