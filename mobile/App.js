@@ -23,7 +23,6 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showImport, setShowImport] = useState(false);
-  const [backupText, setBackupText] = useState("");
   const [backupBusy, setBackupBusy] = useState(false);
 
   async function loadProjects() {
@@ -50,7 +49,6 @@ export default function App() {
   async function restoreAndSyncBackup(source) {
     const result = await restoreBackup(AsyncStorage, source);
     setProjects(result.projects);
-    setBackupText("");
     setShowImport(false);
     Alert.alert("Backup restored", result.restoredCount + " project(s) restore ho gaye.");
   }
@@ -65,15 +63,6 @@ export default function App() {
     } finally {
       setBackupBusy(false);
     }
-  }
-
-  async function handleImportBackup() {
-    setBackupBusy(true);
-    try {
-      await restoreAndSyncBackup(backupText);
-    } catch (cause) {
-      Alert.alert("Import failed", cause?.message || "Backup JSON check karo.");
-    } finally { setBackupBusy(false); }
   }
 
   function handleDeleteProject(project) {
@@ -130,8 +119,8 @@ export default function App() {
         <Text style={styles.eyebrow}>LEGEND AI</Text>
         <Pressable onPress={() => setShowSettings(true)} style={styles.settingsButton}><Text style={styles.settingsText}>⚙ Settings</Text></Pressable>
       </View>
-      <Text style={styles.heading}>Your AI workspace</Text>
-      <Text style={styles.muted}>Create a project and start a conversation with your AI agent.</Text>
+      <Text style={styles.heading}>Build with AI</Text>
+      <Text style={styles.muted}>Create a project, chat with AI, and manage your files. Your work stays on this phone.</Text>
       <View style={styles.form}>
         <TextInput value={name} onChangeText={setName} placeholder="Project name" placeholderTextColor="#78839a" style={styles.input} editable={!saving} returnKeyType="done" onSubmitEditing={handleCreateProject} />
         <Pressable onPress={handleCreateProject} disabled={saving} style={[styles.button, saving && styles.disabled]}>
@@ -147,18 +136,6 @@ export default function App() {
           <Text style={styles.backupButtonText}>Import backup</Text>
         </Pressable>
       </View>
-      {showImport ? (
-        <View style={styles.importPanel}>
-          <Text style={styles.importHint}>Choose a saved Legend AI backup JSON file, or paste its contents below. Existing projects with the same ID will be replaced by the backup.</Text>
-          <Pressable onPress={handleImportBackupFile} disabled={backupBusy} style={styles.importButton}>
-            <Text style={styles.importButtonText}>{backupBusy ? "Please wait…" : "Choose backup file"}</Text>
-          </Pressable>
-          <TextInput value={backupText} onChangeText={setBackupText} multiline textAlignVertical="top" placeholder="Or paste backup JSON…" placeholderTextColor="#78839a" style={styles.backupInput} />
-          <Pressable onPress={handleImportBackup} disabled={backupBusy || !backupText.trim()} style={styles.importButton}>
-            <Text style={styles.importButtonText}>Restore pasted backup</Text>
-          </Pressable>
-        </View>
-      ) : null}
       <Text style={styles.section}>YOUR PROJECTS</Text>
       {loading ? <ActivityIndicator color="#8ea8ff" style={styles.loader} /> : (
         <FlatList data={projects} keyExtractor={(item) => item.id} contentContainerStyle={projects.length ? undefined : styles.empty}
