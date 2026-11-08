@@ -17,3 +17,6 @@ test("OAuth token refresh persists rotated access and refresh tokens",async()=>{
 test("GitHub device flow returns refresh token and expiry metadata",async()=>{const result=await (await import("../src/githubSync.js")).pollGitHubDeviceFlow({clientId:"client-id",deviceCode:"device",fetchImpl:async()=>({ok:true,json:async()=>({access_token:"gho_access",refresh_token:"ghr_refresh",expires_in:28800,refresh_token_expires_in:15897600})})});assert.equal(result.status,"complete");assert.equal(result.accessToken,"gho_access");assert.equal(result.refreshToken,"ghr_refresh");assert.equal(result.expiresIn,28800);});
 
 test("GitHub Base64 encoding round-trips Unicode without TextEncoder globals",()=>{const value="नमस्ते 🌟 café — Legend AI";assert.equal(decodeGitHubContent(encodeGitHubContent(value)),value);assert.equal(decodeGitHubContent(""),"");});
+
+
+test("GitHub backup clearly rejects private repositories with public_repo scope",async()=>{await assert.rejects(()=>testGitHubConnection({config:{token:"t",owner:"owner",repo:"private",branch:"main"},fetchImpl:async()=>({ok:true,json:async()=>({full_name:"owner/private",default_branch:"main",private:true})})}),/public repository/);});
