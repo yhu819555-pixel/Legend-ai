@@ -3,7 +3,7 @@ name: Project CI
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "feature/mvp-foundation"]
+    branches: ["main"]
     paths:
       - "backend/**"
       - "mobile/**"
