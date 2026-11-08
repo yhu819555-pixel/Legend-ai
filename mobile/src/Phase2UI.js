@@ -145,7 +145,7 @@ export function GitHubOverview({ colors, connected, owner, repo, branch, onConne
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Project backup</Text>
       <Text style={{ color: colors.muted, marginTop: 6, lineHeight: 20 }}>{project ? "Selected project: " + project.name : "Open a project first to enable file sync."} Only project text files are synced; chats and settings are not included.</Text>
       <View style={styles.row}>
-        <ActionButton label={busy ? "Working…" : "↑ Push files"} onPress={onPush} colors={colors} disabled={!connected || !project || busy}/>
+        <ActionButton label={busy ? "Working…" : "↑ Push files"} onPress={onPush} colors={colors} disabled={!connected || !repo || !project || busy}/>
         <ActionButton label={busy ? "Working…" : "↓ Pull files"} onPress={onPull} colors={colors} secondary disabled={!connected || !project || busy}/>
       </View>
       <Text style={[styles.note, { color: colors.warning }]}>This is file backup, not full Git: repository browsing, commit history, branch creation and diff review are not implemented.</Text>
