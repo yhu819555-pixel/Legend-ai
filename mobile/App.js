@@ -119,6 +119,7 @@ export default function App() {
       </View>
       <Text style={styles.heading}>Build with AI</Text>
       <Text style={styles.muted}>Create a project, chat with AI, and manage your files. Your work stays on this phone.</Text>
+      <Text style={styles.setupHint}>First time? Add your own OpenAI API key in Settings to turn on AI.</Text>
       <View style={styles.form}>
         <TextInput value={name} onChangeText={setName} placeholder="Project name" placeholderTextColor="#78839a" style={styles.input} editable={!saving} returnKeyType="done" onSubmitEditing={handleCreateProject} />
         <Pressable onPress={handleCreateProject} disabled={saving} style={[styles.button, saving && styles.disabled]}>
@@ -172,7 +173,8 @@ const styles = StyleSheet.create({
   settingsText: { color: "#c3d0f2", fontWeight: "700", fontSize: 12 },
   heading: { color: "#f4f7ff", fontSize: 30, fontWeight: "800", marginBottom: 8 },
   muted: { color: "#9ba8bf", fontSize: 14, lineHeight: 21 },
-  form: { marginTop: 28, gap: 12 },
+  setupHint: { color: "#8493ad", fontSize: 11, lineHeight: 17, marginTop: 10 },
+  form: { marginTop: 22, gap: 12 },
   input: { backgroundColor: "#131f32", borderColor: "#263651", borderWidth: 1, borderRadius: 14, padding: 16, color: "#fff", fontSize: 16 },
   button: { backgroundColor: "#a9bcff", padding: 16, borderRadius: 14, alignItems: "center" },
   disabled: { opacity: 0.6 },
