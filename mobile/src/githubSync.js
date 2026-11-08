@@ -12,7 +12,7 @@ export async function getGitHubConfig(store){
 export async function startGitHubDeviceFlow(clientId,{fetchImpl=fetch}={}) {
  const id=String(clientId||"").trim();
  if(!id) throw new Error("GitHub OAuth App Client ID Settings mein dalo.");
- const response=await fetchImpl("https://github.com/login/device/code",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(id)+"&scope=repo"});
+ const response=await fetchImpl("https://github.com/login/device/code",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(id)+"&scope=public_repo"});
  const data=await response.json();
  if(!response.ok||!data.device_code||!data.user_code) throw new Error(data.error_description||data.message||"GitHub sign-in shuru nahi hua.");
  return {deviceCode:data.device_code,userCode:data.user_code,verificationUri:data.verification_uri||"https://github.com/login/device",expiresIn:Number(data.expires_in)||900,interval:Math.max(5,Number(data.interval)||5)};
