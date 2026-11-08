@@ -43,7 +43,7 @@ export function encodeGitHubContent(value){
  return output;
 }
 export function decodeGitHubContent(value){
- const clean=String(value||"").replace(/\\s/g,"");
+ const clean=String(value||"").replace(/\s/g,"");
  if(!clean)return "";
  if(clean.length%4!==0)throw new Error("GitHub file content ka Base64 format invalid hai.");
  const bytes=[];
