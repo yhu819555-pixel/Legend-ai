@@ -1,13 +1,27 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,FlatList,KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,Alert,FlatList,KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text,TextInput,View} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import {sendChatMessage} from "./chatClient.js";
-import {readProjectFiles} from "./projectFiles.js";
+import {createProjectFile,readProjectFiles,saveProjectFile} from "./projectFiles.js";
 const historyKey=(id)=>"@legend-ai/chat/"+id,API_KEY="legend_ai_provider_api_key",MODEL_KEY="legend_ai_model";
 export default function ChatScreen({project}){
  const [messages,setMessages]=useState([]),[draft,setDraft]=useState(""),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState("");
  useEffect(()=>{let mounted=true;AsyncStorage.getItem(historyKey(project.id)).then(raw=>{if(mounted&&raw)setMessages(JSON.parse(raw));}).catch(()=>{if(mounted)setError("Local chat history load nahi hui.");}).finally(()=>{if(mounted)setReady(true);});return()=>{mounted=false;};},[project.id]);
+ async function handleAgentToolCall(name,args){
+  if(name==="list_project_files"){const files=await readProjectFiles(AsyncStorage,project.id);return {ok:true,files:files.map(file=>({file_name:file.name,characters:file.content.length}))};}
+  if(name==="read_project_file"){const files=await readProjectFiles(AsyncStorage,project.id);const file=files.find(item=>item.name===args.file_name);if(!file)return {ok:false,error:"File not found: "+args.file_name};return {ok:true,file_name:file.name,content:file.content};}
+  if(name==="write_project_file"){
+   const fileName=String(args.file_name||"").trim(),content=String(args.content??"");
+   const files=await readProjectFiles(AsyncStorage,project.id),existing=files.find(item=>item.name===fileName);
+   const approved=await new Promise(resolve=>Alert.alert(existing?"Overwrite project file?":"Create project file?",fileName+" ko local project mein save karne ki permission do.",[{text:"Cancel",style:"cancel",onPress:()=>resolve(false)},{text:"Allow",onPress:()=>resolve(true)}],{cancelable:false}));
+   if(!approved)return {ok:false,error:"User did not approve saving "+fileName+"."};
+   const file=existing?{...existing,content}:{...createProjectFile(fileName,content)};
+   const updated=await saveProjectFile(AsyncStorage,project.id,file);
+   return {ok:true,saved_file:fileName,total_files:updated.length,message:"File saved locally on this phone."};
+  }
+  throw new Error("Unknown project tool: "+name);
+ }
  async function send(){
   const content=draft.trim();if(!content||busy)return;setDraft("");setError("");
   const userMessage={id:String(Date.now()),role:"user",content},next=[...messages,userMessage],assistantId=String(Date.now()+1);
@@ -15,7 +29,7 @@ export default function ChatScreen({project}){
   try{
    await AsyncStorage.setItem(historyKey(project.id),JSON.stringify(next));
    const [apiKey,model,projectFiles]=await Promise.all([SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),readProjectFiles(AsyncStorage,project.id)]);
-   const answer=await sendChatMessage({apiKey,model:model||"gpt-4.1-mini",messages:next.slice(-30).map(({role,content:text})=>({role,content:text})),projectFiles,onDelta:delta=>setMessages(current=>current.map(item=>item.id===assistantId?{...item,content:item.content+delta}:item))});
+   const answer=await sendChatMessage({apiKey,model:model||"gpt-4.1-mini",messages:next.slice(-30).map(({role,content:text})=>({role,content:text})),projectFiles,onToolCall:handleAgentToolCall,onDelta:delta=>setMessages(current=>current.map(item=>item.id===assistantId?{...item,content:delta}:item))});
    const completed=[...next,{id:assistantId,role:"assistant",content:answer}];setMessages(completed);await AsyncStorage.setItem(historyKey(project.id),JSON.stringify(completed));
   }catch(cause){setMessages(next);setError(cause?.message||"Message send nahi hua. Internet aur API settings check karo.");}finally{setBusy(false);}
  }
