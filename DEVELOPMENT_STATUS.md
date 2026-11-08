@@ -6,7 +6,7 @@
 - [x] Android file import and backup sharing.
 - [x] OpenAI Responses API client; API key stored in Android SecureStore.
 - [x] AI project-file tools: list/read and user-approved create/update of local files.
-- [x] GitHub OAuth Device Flow sign-in code and SecureStore token persistence (requires a registered OAuth App Client ID with Device Flow enabled).
+- [x] GitHub OAuth Device Flow sign-in, SecureStore token persistence and automatic access-token refresh (requires a registered OAuth App Client ID with Device Flow enabled).
 - [x] GitHub repository connection test, including automatic default-branch selection.
 - [x] Push project text files to `legend-ai-projects/<project-id>/` in a configured branch.
 - [x] Pull project text files from the same repository folder.

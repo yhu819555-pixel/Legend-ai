@@ -1,12 +1,12 @@
 import { readProjectFiles, saveProjectFile } from "./projectFiles.js";
 
-const KEYS={token:"legend_ai_github_token",clientId:"legend_ai_github_oauth_client_id",owner:"legend_ai_github_owner",repo:"legend_ai_github_repo",branch:"legend_ai_github_branch"};
+const KEYS={token:"legend_ai_github_token",clientId:"legend_ai_github_oauth_client_id",refreshToken:"legend_ai_github_refresh_token",expiresAt:"legend_ai_github_expires_at",owner:"legend_ai_github_owner",repo:"legend_ai_github_repo",branch:"legend_ai_github_branch"};
 export async function getGitHubConfig(store){
  const secureStore=store || await import("expo-secure-store");
- const [token,owner,repo,branch]=await Promise.all([secureStore.getItemAsync(KEYS.token),secureStore.getItemAsync(KEYS.owner),secureStore.getItemAsync(KEYS.repo),secureStore.getItemAsync(KEYS.branch)]);
+ const [token,owner,repo,branch,clientId,refreshToken,expiresAt]=await Promise.all([secureStore.getItemAsync(KEYS.token),secureStore.getItemAsync(KEYS.owner),secureStore.getItemAsync(KEYS.repo),secureStore.getItemAsync(KEYS.branch),secureStore.getItemAsync(KEYS.clientId),secureStore.getItemAsync(KEYS.refreshToken),secureStore.getItemAsync(KEYS.expiresAt)]);
  if(!token||!owner||!repo)return null;
  if(!/^[A-Za-z0-9-]{1,39}$/.test(owner)||!/^[A-Za-z0-9._-]{1,100}$/.test(repo)||/[.]{2}/.test(repo))return null;
- return {token,owner,repo,branch:branch||"main"};
+ return {token,owner,repo,branch:branch||"main",clientId,refreshToken,expiresAt:expiresAt?Number(expiresAt):null,store:secureStore};
 }
 
 export async function startGitHubDeviceFlow(clientId,{fetchImpl=fetch}={}) {
@@ -45,7 +45,18 @@ function decodeBase64(value){
  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
  return new TextDecoder().decode(bytes);
 }
-async function github(path,{method="GET",body,config,fetchImpl=fetch}={}){
+
+async function refreshGitHubToken(config,fetchImpl=fetch) {
+ if(!config.refreshToken||!config.clientId||!config.expiresAt||Date.now()<config.expiresAt-60000)return;
+ const response=await fetchImpl("https://github.com/login/oauth/access_token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded",accept:"application/json"},body:"client_id="+encodeURIComponent(config.clientId)+"&grant_type=refresh_token&refresh_token="+encodeURIComponent(config.refreshToken)});
+ const data=await response.json();
+ if(!response.ok||!data.access_token)throw new Error(data.error_description||data.error||"GitHub login expire ho gaya. Dobara Connect GitHub karo.");
+ config.token=data.access_token;
+ config.refreshToken=data.refresh_token||config.refreshToken;
+ config.expiresAt=Date.now()+(Number(data.expires_in)||28800)*1000;
+ if(config.store){await config.store.setItemAsync(KEYS.token,config.token);if(data.refresh_token)await config.store.setItemAsync(KEYS.refreshToken,config.refreshToken);await config.store.setItemAsync(KEYS.expiresAt,String(config.expiresAt));}
+}
+\nasync function github(path,{method="GET",body,config,fetchImpl=fetch}={}){\n await refreshGitHubToken(config,fetchImpl);
  const response=await fetchImpl("https://api.github.com"+path,{method,headers:{authorization:"Bearer "+config.token,accept:"application/vnd.github+json","x-github-api-version":"2022-11-28",...(body?{"content-type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
  if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}const error=new Error("GitHub API "+response.status+(detail?": "+detail:""));error.status=response.status;throw error;}
  return response.status===204?{}:response.json();
