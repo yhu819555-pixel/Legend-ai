@@ -12,8 +12,8 @@ import SettingsScreen from "./src/SettingsScreen.js";
 import { getGitHubConfig, testGitHubConnection, pushProjectToGitHub, pullProjectFromGitHub, GITHUB_SETTING_KEYS } from "./src/githubSync.js";
 import {
   paletteFor, ScreenHeader, HomeDashboard, ProjectsView, WorkspaceView,
-  UnavailableView, GitHubOverview, MoreMenu, BottomNavigation, CreateProjectModal,
-  ToolsView, ActionButton, Surface
+  UnavailableView, TerminalView, PreviewView, GitHubOverview, MoreMenu, BottomNavigation, CreateProjectModal,
+  ToolsView
 } from "./src/Phase2UI.js";
 
 const THEME_KEY = "@legend-ai/theme";
