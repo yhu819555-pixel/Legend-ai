@@ -133,7 +133,7 @@ export default function SettingsScreen({onBack}){
 
  return <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
   <Pressable onPress={onBack}><Text style={styles.back}>‹  Back</Text></Pressable>
-  <Text style={styles.eyebrow}>LEGEND AI</Text>
+  <Text style={styles.eyebrow}>MY AI AGENT</Text>
   <Text style={styles.title}>Settings</Text>
   <Text style={styles.description}>Add your own OpenAI API key to use AI. Your key stays in this phone's secure storage. Every user can use their own key; no Legend AI account or server is required.</Text>
 
