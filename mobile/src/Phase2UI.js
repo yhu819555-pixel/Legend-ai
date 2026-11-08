@@ -1,9 +1,27 @@
 import React, { useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 export const paletteFor = (mode = "dark") => mode === "light"
   ? { bg: "#F3F6FC", surface: "#FFFFFF", surface2: "#E9EFF9", border: "#D9E2F0", text: "#17233B", muted: "#65738D", accent: "#4267E8", accent2: "#7654D6", good: "#16865B", warning: "#A66A13", danger: "#C0445B" }
   : { bg: "#080D19", surface: "#111A2B", surface2: "#18243A", border: "#273650", text: "#F3F6FF", muted: "#91A0BA", accent: "#8EA8FF", accent2: "#B29AFF", good: "#71D6A3", warning: "#F0BD70", danger: "#FF9AAA" };
+
+
+export function CreateProjectModal({ visible, colors, onCancel, onCreate, busy }) {
+  const [name, setName] = useState("");
+  return <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <View style={styles.modalShade}>
+      <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Create a project</Text>
+        <Text style={{ color: colors.muted, lineHeight: 19 }}>Give your workspace a name. It will be saved on this phone.</Text>
+        <TextInput autoFocus value={name} onChangeText={setName} placeholder="e.g. My first app" placeholderTextColor={colors.muted} style={[styles.search, { color: colors.text, backgroundColor: colors.surface2, borderColor: colors.border, marginTop: 4, marginBottom: 4 }]}/>
+        <View style={styles.row}>
+          <ActionButton label="Cancel" onPress={onCancel} colors={colors} secondary/>
+          <ActionButton label={busy ? "Creating…" : "Create project"} onPress={() => onCreate(name)} colors={colors} disabled={busy || !name.trim()}/>
+        </View>
+      </View>
+    </View>
+  </Modal>;
+}
 
 export function ScreenHeader({ title, subtitle, onBack, right, colors }) {
   return <View style={styles.header}>
@@ -164,7 +182,7 @@ export function BottomNavigation({ colors, current, onNavigate }) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 18, paddingBottom: 28, gap: 14 },
+  content: { padding: 18, paddingBottom: 28, gap: 14 },\n  modalShade: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "center", padding: 22 },\n  modalCard: { borderWidth: 1, borderRadius: 20, padding: 18, gap: 12 },
   header: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 14 },
   headerLine: { flexDirection: "row", alignItems: "center", gap: 10 },
   back: { fontSize: 12, fontWeight: "800", marginBottom: 5 },
