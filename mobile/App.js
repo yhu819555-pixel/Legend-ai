@@ -108,7 +108,7 @@ export default function App() {
           </View>
           <Pressable onPress={() => setShowSettings(true)}><Text style={styles.settingsLink}>Settings</Text></Pressable>
         </View>
-        {workspaceTab === "chat" ? <ChatScreen project={activeProject} /> : <FilesScreen project={activeProject} />}
+        {workspaceTab === "chat" ? <ChatScreen project={activeProject} /> : <FilesScreen project={activeProject} onOpenSettings={() => setShowSettings(true)} />}
       </SafeAreaView>
     );
   }
