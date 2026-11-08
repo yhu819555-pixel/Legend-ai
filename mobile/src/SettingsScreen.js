@@ -1,5 +1,5 @@
 import React,{useEffect,useState} from "react";
-import {ActivityIndicator,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
+import {ActivityIndicator,AppState,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import * as SecureStore from "expo-secure-store";
 import {GITHUB_SETTING_KEYS,getGitHubAccount,pollGitHubDeviceFlow,startGitHubDeviceFlow,testGitHubConnection} from "./githubSync.js";
 import {testOpenAIConnection} from "./chatClient.js";
@@ -32,7 +32,7 @@ export default function SettingsScreen({onBack}){
    SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),
    SecureStore.getItemAsync(GITHUB_SETTING_KEYS.token),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.owner),
    SecureStore.getItemAsync(GITHUB_SETTING_KEYS.repo),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.branch),
-  ]).then(([key,selectedModel,token,savedOwner,savedRepo,savedBranch,savedClientId])=>{
+   ]).then(([key,selectedModel,token,savedOwner,savedRepo,savedBranch])=>{
    if(!mounted)return;
    setHasKey(Boolean(key));setModel(selectedModel||DEFAULT_MODEL);setHasGhToken(Boolean(token));
    setOwner(savedOwner||"");setRepo(savedRepo||"");setBranch(savedBranch||"main");
@@ -76,11 +76,17 @@ export default function SettingsScreen({onBack}){
    await Linking.openURL(flow.verificationUri);
    const deadline=Date.now()+flow.expiresIn*1000;
    let delay=flow.interval*1000;
-   while(Date.now()<deadline){
+   let firstPoll=true;
+   while(firstPoll||Date.now()<deadline){
+    firstPoll=false;
     await new Promise(resolve=>setTimeout(resolve,delay));
+    // Android may pause JS while Chrome is open. Poll only after returning to the app,
+    // and allow one final poll on resume even if the local deadline elapsed in background.
+    if(AppState.currentState!=="active")continue;
     const result=await pollGitHubDeviceFlow({clientId:id,deviceCode:flow.deviceCode});
     if(result.status==="complete"){
      await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.token,result.accessToken);
+     await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.clientId,id);
      if(result.refreshToken)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.refreshToken,result.refreshToken);
      if(result.expiresIn)await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.expiresAt,String(Date.now()+result.expiresIn*1000));
      const account=await getGitHubAccount({token:result.accessToken});
