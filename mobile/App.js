@@ -183,9 +183,9 @@ export default function App() {
     body = activeProject ? <FilesScreen project={activeProject} onOpenSettings={openSettings} theme={theme}/> :
       <UnavailableView colors={colors} title="No project selected" subtitle="The code editor opens files from a local project." details="Open or create a project first."/>;
   } else if (screen === "terminal") {
-    body = <UnavailableView colors={colors} title="Terminal" subtitle="A terminal interface is prepared for this workspace." details="Command execution is not implemented. There is no isolated runner connected, so commands cannot safely be run from this app yet."/>;
+    body = <TerminalView colors={colors}/>;
   } else if (screen === "preview") {
-    body = <UnavailableView colors={colors} title="Live preview" subtitle="Preview controls are not connected yet." details="This build has no app bundler, preview server or runtime session. The app will not pretend a preview has started."/>;
+    body = <PreviewView colors={colors}/>;
   } else if (screen === "github") {
     body = <GitHubOverview colors={colors} connected={Boolean(github?.connected)} owner={github?.owner} repo={github?.repo} branch={github?.branch}
       onConnect={openSettings} onPush={() => runGitHubSync("push")} onPull={() => runGitHubSync("pull")}
