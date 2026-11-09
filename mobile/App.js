@@ -40,6 +40,7 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [github, setGithub] = useState(null);
   const [githubBusy, setGithubBusy] = useState(false);
+  const [workspacePrompt, setWorkspacePrompt] = useState("");
   const colors = paletteFor(theme);
 
   async function loadProjects() {
@@ -175,10 +176,10 @@ export default function App() {
     body = loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 30 }}/> :
       <ProjectsView projects={projects} colors={colors} onOpen={openProject} onDelete={handleDeleteProject} onCreate={() => setShowCreate(true)}/>;
   } else if (screen === "chat") {
-    body = activeProject ? <ChatScreen project={activeProject} theme={theme} onOpenSettings={openSettings}/> :
+    body = activeProject ? <ChatScreen project={activeProject} theme={theme} onOpenSettings={openSettings} initialPrompt={workspacePrompt} onInitialPromptApplied={() => setWorkspacePrompt("")}/> :
       <UnavailableView colors={colors} title="Choose a project" subtitle="AI Chat works inside a project so it can use your local files as context." details="Open Projects and choose a project, or create a new one from Home."/>;
   } else if (screen === "workspace") {
-    body = <WorkspaceView colors={colors} project={activeProject}/>;
+    body = <WorkspaceView colors={colors} project={activeProject} onRunTask={(task) => { setWorkspacePrompt(task); setScreen("chat"); }}/>;
   } else if (screen === "editor") {
     body = activeProject ? <FilesScreen project={activeProject} onOpenSettings={openSettings} theme={theme}/> :
       <UnavailableView colors={colors} title="No project selected" subtitle="The code editor opens files from a local project." details="Open or create a project first."/>;
