@@ -19,7 +19,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
  const [owner,setOwner]=useState("");
  const [repo,setRepo]=useState("");
  const [branch,setBranch]=useState("main");
- const [hasGhToken,setHasGhToken]=useState(false);
+ const [hasGhToken,setHasGhToken]=useState(false);\n const [githubToken,setGithubToken]=useState("");
  const [advancedOpen,setAdvancedOpen]=useState(false);
  const [connecting,setConnecting]=useState(false);
  const [deviceCode,setDeviceCode]=useState("");
@@ -43,7 +43,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
 
  async function save(){
   const key=apiKey.trim(),selectedModel=model.trim();
-  if(key&&!key.startsWith("sk-")){setMessage("Check your OpenAI API key format.");return;}
+  if(key&&!key.startsWith("sk-")){setMessage("This build accepts OpenAI API keys only (they start with sk-). Gemini keys are not supported yet.");return;}\n  if(!key&&!hasKey){setMessage("Paste your OpenAI API key before saving.");return;}
   if(!selectedModel||selectedModel.length>80){setMessage("Enter a valid model name.");return;}
   setSaving(true);setMessage("");
   try{
@@ -99,6 +99,20 @@ export default function SettingsScreen({onBack,theme="dark"}){
    }
    throw new Error("GitHub sign-in expired. Please try again.");
   }catch(error){setMessage(error.message||"GitHub connection failed.");}
+  finally{setConnecting(false);}
+ }
+
+ async function connectGitHubWithToken(){
+  const token=githubToken.trim();
+  if(!token){setMessage("Paste a GitHub token with public_repo permission.");return;}
+  setConnecting(true);setMessage("");
+  try{
+   const account=await getGitHubAccount({token});
+   await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.token,token);
+   await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,account.login);
+   setOwner(account.login);setHasGhToken(true);setGithubToken("");
+   setMessage("GitHub account connected as "+account.login+". Enter a public repository name, then test it.");
+  }catch(error){setMessage(error.message||"GitHub token verify nahi hua.");}
   finally{setConnecting(false);}
  }
 
@@ -165,8 +179,12 @@ export default function SettingsScreen({onBack,theme="dark"}){
   </Pressable>
   {advancedOpen?<>
    <Text style={styles.description}>GitHub backup optional hai aur sirf public repositories support karta hai. Connect GitHub dabao, phir yahan dikhaya code github.com/login/device par enter karke approve karo. Projects aur chats phone par hi rahenge.</Text>
-   <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.secondary,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>{hasGhToken?"Reconnect GitHub":"Connect GitHub"}</Text>}</Pressable>
+   <Pressable onPress={connectGitHub} disabled={connecting} style={[styles.secondary,connecting&&styles.disabled]}>{connecting?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>{hasGhToken?"Reconnect with GitHub browser":"Connect with GitHub browser"}</Text>}</Pressable>
    {deviceCode?<Text style={styles.message}>Enter this code on GitHub: {deviceCode}</Text>:null}
+   {!BUILT_IN_GITHUB_CLIENT_ID?<Text style={styles.hint}>Browser sign-in is not enabled in this build yet. You can connect with a GitHub token below instead.</Text>:null}
+   <Text style={styles.label}>GITHUB TOKEN (PUBLIC_REPO)</Text>
+   <TextInput value={githubToken} onChangeText={setGithubToken} placeholder="Paste GitHub token" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
+   <Pressable onPress={connectGitHubWithToken} disabled={connecting||!githubToken.trim()} style={[styles.secondary,(connecting||!githubToken.trim())&&styles.disabled]}><Text style={styles.secondaryText}>Connect with token</Text></Pressable>
    <Text style={styles.label}>REPOSITORY NAME</Text>
    <TextInput value={repo} onChangeText={setRepo} placeholder="your-backup-repository" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
    <Text style={styles.label}>BRANCH (OPTIONAL)</Text>
