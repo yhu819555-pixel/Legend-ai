@@ -36,10 +36,11 @@ function MessageBody({content,styles}) {
  })}</View>;
 }
 
-export default function ChatScreen({project,theme="dark",onOpenSettings}){
+export default function ChatScreen({project,theme="dark",onOpenSettings,initialPrompt="",onInitialPromptApplied}){
  const [messages,setMessages]=useState([]),[draft,setDraft]=useState(""),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(""),[failedDraft,setFailedDraft]=useState(""),[model,setModel]=useState("gpt-4.1-mini");
  const styles=useMemo(()=>makeStyles(theme),[theme]);
  useEffect(()=>{let mounted=true;Promise.all([AsyncStorage.getItem(historyKey(project.id)),SecureStore.getItemAsync(MODEL_KEY)]).then(([raw,savedModel])=>{if(mounted&&raw)setMessages(JSON.parse(raw));if(mounted)setModel(savedModel||"gpt-4.1-mini");}).catch(()=>{if(mounted)setError("Local chat history or settings could not be loaded.");}).finally(()=>{if(mounted)setReady(true);});return()=>{mounted=false;};},[project.id]);
+ useEffect(()=>{if(ready&&initialPrompt.trim()){setDraft(initialPrompt.trim());onInitialPromptApplied?.();}},[ready,initialPrompt]);
  async function handleAgentToolCall(name,args){
   if(name==="list_project_files"){const files=await readProjectFiles(AsyncStorage,project.id);return {ok:true,files:files.map(file=>({file_name:file.name,characters:file.content.length}))};}
   if(name==="read_project_file"){const files=await readProjectFiles(AsyncStorage,project.id);const file=files.find(item=>item.name===args.file_name);if(!file)return {ok:false,error:"File not found: "+args.file_name};return {ok:true,file_name:file.name,content:file.content};}
