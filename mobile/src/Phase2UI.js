@@ -111,19 +111,21 @@ export function ProjectsView({ projects, colors, onOpen, onDelete, onCreate }) {
   </View>;
 }
 
-export function WorkspaceView({ colors, project }) {
+export function WorkspaceView({ colors, project, onRunTask }) {
   const [task, setTask] = useState("");
+  const canSubmit = Boolean(project && task.trim() && onRunTask);
   return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
     <Surface colors={colors}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Agent task</Text>
-      <Text style={[styles.body, { color: colors.muted, marginTop: 6 }]}>Describe the change you want the agent to make in {project?.name || "your project"}.</Text>
-      <TextInput multiline value={task} onChangeText={setTask} placeholder="Example: Review the project structure and suggest improvements…" placeholderTextColor={colors.muted} style={[styles.taskInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface2 }]}/>
-      <ActionButton label="Agent engine unavailable" colors={colors} disabled/>
-      <Text style={[styles.note, { color: colors.warning }]}>Task execution, approvals, tool activity and automatic file-change plans are not connected yet. This screen does not run or submit tasks.</Text>
+      <Text style={[styles.body, { color: colors.muted, marginTop: 6 }]}>Describe what you want MY AI AGENT to do in {project?.name || "your project"}.</Text>
+      <TextInput multiline value={task} onChangeText={setTask} placeholder="Example: Inspect my project files, explain the structure, then improve the home screen…" placeholderTextColor={colors.muted} style={[styles.taskInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface2 }]}/>
+      <ActionButton label="Continue in AI Chat" onPress={() => { if (canSubmit) { onRunTask(task.trim()); setTask(""); } }} colors={colors} disabled={!canSubmit}/>
+      <Text style={[styles.note, { color: colors.muted }]}>Your task opens in AI Chat, where the connected AI model can inspect project files and request your approval before saving changes. Your own API key and internet connection are required.</Text>
+      {!project ? <Text style={[styles.note, { color: colors.warning }]}>Open or create a project first.</Text> : null}
     </Surface>
     <Surface colors={colors}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Workspace capabilities</Text>
-      {["AI can read project files","AI can propose and save files after your approval","No isolated command runner","No live app preview runtime","No automatic test-and-repair loop"].map((item, i) => <View key={item} style={styles.capability}><Text style={{ color: i < 2 ? colors.good : colors.warning }}>{i < 2 ? "●" : "○"}</Text><Text style={{ color: colors.text, flex: 1, fontSize: 13 }}>{item}</Text></View>)}
+      {["AI can read project files","AI can propose and save files after your approval","Secure terminal / shell runner not connected","Live app preview runtime not connected","Automatic test-and-repair loop not connected"].map((item, i) => <View key={item} style={styles.capability}><Text style={{ color: i < 2 ? colors.good : colors.warning }}>{i < 2 ? "●" : "○"}</Text><Text style={{ color: colors.text, flex: 1, fontSize: 13 }}>{item}</Text></View>)}
     </Surface>
   </ScrollView>;
 }
