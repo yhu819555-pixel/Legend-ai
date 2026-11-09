@@ -114,6 +114,19 @@ export function ProjectsView({ projects, colors, onOpen, onDelete, onCreate }) {
 
 export function WorkspaceView({ colors, project, onRunTask }) {
   const [task, setTask] = useState("");
+  const [taskError, setTaskError] = useState("");
+  const canSubmit = Boolean(project && task.trim() && typeof onRunTask === "function");
+  function submitTask() {
+    try {
+      const normalized = normalizeWorkspaceTask(task);
+      if (!project) throw new Error("Open or create a project first.");
+      if (typeof onRunTask !== "function") throw new Error("Could not open AI Chat. Please return and try again.");
+      setTaskError("");
+      onRunTask(normalized);
+    } catch (error) {
+      setTaskError(error?.message || "Please check your task and try again.");
+    }
+  }
   return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
     <Surface colors={colors}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Agent task</Text>
