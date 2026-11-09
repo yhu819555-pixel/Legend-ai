@@ -19,7 +19,8 @@ export default function SettingsScreen({onBack,theme="dark"}){
  const [owner,setOwner]=useState("");
  const [repo,setRepo]=useState("");
  const [branch,setBranch]=useState("main");
- const [hasGhToken,setHasGhToken]=useState(false);\n const [githubToken,setGithubToken]=useState("");
+ const [hasGhToken,setHasGhToken]=useState(false);
+ const [githubToken,setGithubToken]=useState("");
  const [advancedOpen,setAdvancedOpen]=useState(false);
  const [connecting,setConnecting]=useState(false);
  const [deviceCode,setDeviceCode]=useState("");
@@ -43,7 +44,8 @@ export default function SettingsScreen({onBack,theme="dark"}){
 
  async function save(){
   const key=apiKey.trim(),selectedModel=model.trim();
-  if(key&&!key.startsWith("sk-")){setMessage("This build accepts OpenAI API keys only (they start with sk-). Gemini keys are not supported yet.");return;}\n  if(!key&&!hasKey){setMessage("Paste your OpenAI API key before saving.");return;}
+  if(key&&!key.startsWith("sk-")){setMessage("This build accepts OpenAI API keys only (they start with sk-). Gemini keys are not supported yet.");return;}
+  if(!key&&!hasKey){setMessage("Paste your OpenAI API key before saving.");return;}
   if(!selectedModel||selectedModel.length>80){setMessage("Enter a valid model name.");return;}
   setSaving(true);setMessage("");
   try{
