@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { normalizeWorkspaceTask } from "./workspaceTask.js";
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 export const paletteFor = (mode = "dark") => mode === "light"
@@ -111,15 +112,17 @@ export function ProjectsView({ projects, colors, onOpen, onDelete, onCreate }) {
   </View>;
 }
 
-export function WorkspaceView({ colors, project }) {
+export function WorkspaceView({ colors, project, onRunTask }) {
   const [task, setTask] = useState("");
   return <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
     <Surface colors={colors}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Agent task</Text>
-      <Text style={[styles.body, { color: colors.muted, marginTop: 6 }]}>Describe the change you want the agent to make in {project?.name || "your project"}.</Text>
-      <TextInput multiline value={task} onChangeText={setTask} placeholder="Example: Review the project structure and suggest improvements…" placeholderTextColor={colors.muted} style={[styles.taskInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface2 }]}/>
-      <ActionButton label="Agent engine unavailable" colors={colors} disabled/>
-      <Text style={[styles.note, { color: colors.warning }]}>Task execution, approvals, tool activity and automatic file-change plans are not connected yet. This screen does not run or submit tasks.</Text>
+      <Text style={[styles.body, { color: colors.muted, marginTop: 6 }]}>Describe what you want MY AI AGENT to do in {project?.name || "your project"}.</Text>
+      <TextInput multiline value={task} onChangeText={setTask} placeholder="Example: Inspect my project files, explain the structure, then improve the home screen…" placeholderTextColor={colors.muted} style={[styles.taskInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surface2 }]}/>
+      <ActionButton label="Continue in AI Chat" onPress={submitTask} colors={colors} disabled={!canSubmit}/>
+      <Text style={[styles.note, { color: colors.muted }]}>Your task opens in AI Chat, where the connected AI model can inspect project files and request your approval before saving changes. Your own API key and internet connection are required.</Text>
+      {taskError ? <Text style={[styles.note, { color: colors.danger }]}>{taskError}</Text> : null}
+      {!project ? <Text style={[styles.note, { color: colors.warning }]}>Open or create a project first.</Text> : null}
     </Surface>
     <Surface colors={colors}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Workspace capabilities</Text>
