@@ -65,6 +65,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
  }
 
  async function testAI(){
+  if(!apiKey.trim()&&!hasKey){setMessage("Is provider ki API key enter karo, phir test karo.");return;}
   setTestingAI(true);setMessage("");
   try{
    const key=apiKey.trim()||await SecureStore.getItemAsync(API_KEY);
@@ -169,7 +170,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
   <Text style={styles.section}>AI PROVIDER</Text>
   <Text style={styles.label}>AI PROVIDER</Text>
   <View style={{flexDirection:"row",flexWrap:"wrap",gap:7,marginTop:8}}>
-   {["openai","gemini","groq","openrouter","custom"].map(item=><Pressable key={item} onPress={()=>{setProvider(item);setModel(PROVIDER_DEFAULTS[item].model);setBaseUrl(PROVIDER_DEFAULTS[item].baseUrl);setMessage("");}} style={{paddingVertical:9,paddingHorizontal:12,borderRadius:9,backgroundColor:provider===item?(theme==="light"?"#4267e8":"#526a9c"):(theme==="light"?"#E9EFF9":"#172640")}}><Text style={{color:provider===item?"#fff":(theme==="light"?"#17233B":"#f4f7ff"),fontWeight:"800",fontSize:11}}>{item==="custom"?"Custom URL":item[0].toUpperCase()+item.slice(1)}</Text></Pressable>)}
+   {["openai","gemini","groq","openrouter","custom"].map(item=><Pressable key={item} onPress={()=>{if(item!==provider)setHasKey(false);setProvider(item);setModel(PROVIDER_DEFAULTS[item].model);setBaseUrl(PROVIDER_DEFAULTS[item].baseUrl);setMessage("Provider changed. Enter that provider's own API key before saving or testing.");}} style={{paddingVertical:9,paddingHorizontal:12,borderRadius:9,backgroundColor:provider===item?(theme==="light"?"#4267e8":"#526a9c"):(theme==="light"?"#E9EFF9":"#172640")}}><Text style={{color:provider===item?"#fff":(theme==="light"?"#17233B":"#f4f7ff"),fontWeight:"800",fontSize:11}}>{item==="custom"?"Custom URL":item[0].toUpperCase()+item.slice(1)}</Text></Pressable>)}
   </View>
   <Text style={styles.label}>API KEY</Text>
   <TextInput value={apiKey} onChangeText={setApiKey} placeholder={hasKey?"Saved securely · enter a new key to replace":"Paste "+provider+" API key"} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
