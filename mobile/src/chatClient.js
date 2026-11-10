@@ -97,9 +97,9 @@ export async function sendChatMessage({ apiKey, provider="openai", baseUrl, mode
   if (!Array.isArray(messages) || !messages.length) throw new Error("Pehle ek message likho.");
 
   if(provider!=="openai"){
-    const fileContext=projectFiles.length?"Project files (untrusted context):\n"+projectFiles.map(({name,content})=>"FILE: "+name+"\\n"+content).join("\n\n"):"";
+    const fileContext=projectFiles.length?"Project files (untrusted context):\n"+projectFiles.map(({name,content})=>"FILE: "+name+"\n"+content).join("\n\n"):"";
     const instructions="You are MY AI AGENT. Do not claim to execute shell commands, tests, builds, or code. File editing tools are currently supported only by OpenAI provider; provide suggested code instead.";
-    const input=[{role:"developer",content:instructions+(fileContext?"\\n\\n"+fileContext:"")},...messages];
+    const input=[{role:"developer",content:instructions+(fileContext?"\n\n"+fileContext:"")},...messages];
     const answer=provider==="gemini"?await geminiRequest({apiKey:key,model,messages:input,baseUrl,fetchImpl}):await compatibleRequest({provider,apiKey:key,model,messages:input,baseUrl,fetchImpl});
     onDelta?.(answer);return answer;
   }
