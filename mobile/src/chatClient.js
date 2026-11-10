@@ -7,7 +7,7 @@ const PROJECT_TOOLS=[
 
 const PROVIDER_DEFAULTS={openai:{model:"gpt-4.1-mini",baseUrl:"https://api.openai.com/v1"},gemini:{model:"gemini-2.5-flash",baseUrl:"https://generativelanguage.googleapis.com/v1beta"},groq:{model:"llama-3.3-70b-versatile",baseUrl:"https://api.groq.com/openai/v1"},openrouter:{model:"openai/gpt-4.1-mini",baseUrl:"https://openrouter.ai/api/v1"},custom:{model:"",baseUrl:""}};
 export {PROVIDER_DEFAULTS};
-const trimUrl=value=>String(value||"").trim().replace(/\\/+$/,"");
+const trimUrl=value=>String(value||"").trim().replace(/\/+$/,"");
 async function compatibleRequest({provider,apiKey,model,messages,baseUrl,fetchImpl}){
  const url=trimUrl(baseUrl||PROVIDER_DEFAULTS[provider].baseUrl)+"/chat/completions";
  const response=await fetchImpl(url,{method:"POST",headers:{authorization:"Bearer "+apiKey,"content-type":"application/json"},body:JSON.stringify({model,messages:messages.map(m=>({role:m.role==="developer"?"system":m.role,content:m.content})),stream:false})});
@@ -18,7 +18,7 @@ async function compatibleRequest({provider,apiKey,model,messages,baseUrl,fetchIm
 async function geminiRequest({apiKey,model,messages,baseUrl,fetchImpl}){
  const url=trimUrl(baseUrl||PROVIDER_DEFAULTS.gemini.baseUrl)+"/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(apiKey);
  const contents=messages.filter(m=>m.role!=="developer").map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:String(m.content||"")}]}));
- const system=messages.filter(m=>m.role==="developer").map(m=>m.content).join("\\n\\n");
+ const system=messages.filter(m=>m.role==="developer").map(m=>m.content).join("\n\n");
  const payload={contents,generationConfig:{maxOutputTokens:4000}};if(system)payload.systemInstruction={parts:[{text:system}]};
  const response=await fetchImpl(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
  let data={};try{data=await response.json();}catch{}
@@ -97,7 +97,7 @@ export async function sendChatMessage({ apiKey, provider="openai", baseUrl, mode
   if (!Array.isArray(messages) || !messages.length) throw new Error("Pehle ek message likho.");
 
   if(provider!=="openai"){
-    const fileContext=projectFiles.length?"Project files (untrusted context):\\n"+projectFiles.map(({name,content})=>"FILE: "+name+"\\n"+content).join("\\n\\n"):"";
+    const fileContext=projectFiles.length?"Project files (untrusted context):\n"+projectFiles.map(({name,content})=>"FILE: "+name+"\\n"+content).join("\n\n"):"";
     const instructions="You are MY AI AGENT. Do not claim to execute shell commands, tests, builds, or code. File editing tools are currently supported only by OpenAI provider; provide suggested code instead.";
     const input=[{role:"developer",content:instructions+(fileContext?"\\n\\n"+fileContext:"")},...messages];
     const answer=provider==="gemini"?await geminiRequest({apiKey:key,model,messages:input,baseUrl,fetchImpl}):await compatibleRequest({provider,apiKey:key,model,messages:input,baseUrl,fetchImpl});
