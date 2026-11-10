@@ -5,7 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Clipboard from "expo-clipboard";
 import {sendChatMessage} from "./chatClient.js";
 import {createProjectFile,readProjectFiles,saveProjectFile} from "./projectFiles.js";
-const historyKey=(id)=>"@legend-ai/chat/"+id,API_KEY="legend_ai_provider_api_key",MODEL_KEY="legend_ai_model";
+const historyKey=(id)=>"@legend-ai/chat/"+id,API_KEY="legend_ai_provider_api_key",MODEL_KEY="legend_ai_model",PROVIDER_KEY="legend_ai_provider",BASE_URL_KEY="legend_ai_base_url";
 
 function InlineText({value,styles}) {
  const parts=String(value||"").split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
@@ -37,9 +37,9 @@ function MessageBody({content,styles}) {
 }
 
 export default function ChatScreen({project,theme="dark",onOpenSettings,initialPrompt="",onInitialPromptApplied}){
- const [messages,setMessages]=useState([]),[draft,setDraft]=useState(""),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(""),[failedDraft,setFailedDraft]=useState(""),[model,setModel]=useState("gpt-4.1-mini");
+ const [messages,setMessages]=useState([]),[draft,setDraft]=useState(""),[busy,setBusy]=useState(false),[ready,setReady]=useState(false),[error,setError]=useState(""),[failedDraft,setFailedDraft]=useState(""),[model,setModel]=useState("gpt-4.1-mini"),[provider,setProvider]=useState("openai"),[baseUrl,setBaseUrl]=useState("");
  const styles=useMemo(()=>makeStyles(theme),[theme]);
- useEffect(()=>{let mounted=true;Promise.all([AsyncStorage.getItem(historyKey(project.id)),SecureStore.getItemAsync(MODEL_KEY)]).then(([raw,savedModel])=>{if(mounted&&raw)setMessages(JSON.parse(raw));if(mounted)setModel(savedModel||"gpt-4.1-mini");}).catch(()=>{if(mounted)setError("Local chat history or settings could not be loaded.");}).finally(()=>{if(mounted)setReady(true);});return()=>{mounted=false;};},[project.id]);
+ useEffect(()=>{let mounted=true;Promise.all([AsyncStorage.getItem(historyKey(project.id)),SecureStore.getItemAsync(MODEL_KEY),SecureStore.getItemAsync(PROVIDER_KEY),SecureStore.getItemAsync(BASE_URL_KEY)]).then(([raw,savedModel,savedProvider,savedBaseUrl])=>{if(mounted&&raw)setMessages(JSON.parse(raw));if(mounted)setModel(savedModel||"gpt-4.1-mini");if(mounted)setProvider(savedProvider||"openai");if(mounted)setBaseUrl(savedBaseUrl||"");}).catch(()=>{if(mounted)setError("Local chat history or settings could not be loaded.");}).finally(()=>{if(mounted)setReady(true);});return()=>{mounted=false;};},[project.id]);
  useEffect(()=>{if(ready&&initialPrompt.trim()){setDraft(initialPrompt.trim());onInitialPromptApplied?.();}},[ready,initialPrompt]);
  async function handleAgentToolCall(name,args){
   if(name==="list_project_files"){const files=await readProjectFiles(AsyncStorage,project.id);return {ok:true,files:files.map(file=>({file_name:file.name,characters:file.content.length}))};}
@@ -62,8 +62,8 @@ export default function ChatScreen({project,theme="dark",onOpenSettings,initialP
   setMessages([...next,{id:assistantId,role:"assistant",content:""}]);setBusy(true);
   try{
    await AsyncStorage.setItem(historyKey(project.id),JSON.stringify(next));
-   const [apiKey,savedModel,projectFiles]=await Promise.all([SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),readProjectFiles(AsyncStorage,project.id)]);
-   const answer=await sendChatMessage({apiKey,model:savedModel||model,messages:next.slice(-30).map(({role,content:text})=>({role,content:text})),projectFiles,onToolCall:handleAgentToolCall,onDelta:delta=>setMessages(current=>current.map(item=>item.id===assistantId?{...item,content:item.content+delta}:item))});
+   const [apiKey,savedModel,savedProvider,savedBaseUrl,projectFiles]=await Promise.all([SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),SecureStore.getItemAsync(PROVIDER_KEY),SecureStore.getItemAsync(BASE_URL_KEY),readProjectFiles(AsyncStorage,project.id)]);
+   const answer=await sendChatMessage({apiKey,provider:savedProvider||provider,baseUrl:savedBaseUrl||baseUrl,model:savedModel||model,messages:next.slice(-30).map(({role,content:text})=>({role,content:text})),projectFiles,onToolCall:handleAgentToolCall,onDelta:delta=>setMessages(current=>current.map(item=>item.id===assistantId?{...item,content:item.content+delta}:item))});
    const completed=[...next,{id:assistantId,role:"assistant",content:answer}];setMessages(completed);await AsyncStorage.setItem(historyKey(project.id),JSON.stringify(completed));
   }catch(cause){setMessages(next);setFailedDraft(content);setError(cause?.message||"Message send nahi hua. Internet aur API settings check karo.");}
   finally{setBusy(false);}
