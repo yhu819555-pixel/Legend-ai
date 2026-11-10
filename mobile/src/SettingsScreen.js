@@ -2,10 +2,12 @@ import React,{useEffect,useMemo,useState} from "react";
 import {ActivityIndicator,AppState,Alert,Linking,Pressable,ScrollView,StyleSheet,Text,TextInput,View} from "react-native";
 import * as SecureStore from "expo-secure-store";
 import {GITHUB_SETTING_KEYS,getGitHubAccount,pollGitHubDeviceFlow,startGitHubDeviceFlow,testGitHubConnection} from "./githubSync.js";
-import {testOpenAIConnection} from "./chatClient.js";
+import {testProviderConnection,PROVIDER_DEFAULTS} from "./chatClient.js";
 
 const API_KEY="legend_ai_provider_api_key";
 const MODEL_KEY="legend_ai_model";
+const PROVIDER_KEY="legend_ai_provider";
+const BASE_URL_KEY="legend_ai_base_url";
 const DEFAULT_MODEL="gpt-4.1-mini";
 // Set EXPO_PUBLIC_GITHUB_CLIENT_ID in the release build to make GitHub login one-tap for every user.
 const BUILT_IN_GITHUB_CLIENT_ID=process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID||"";
@@ -14,6 +16,8 @@ export default function SettingsScreen({onBack,theme="dark"}){
  const styles=useMemo(()=>makeStyles(theme),[theme]);
  const [apiKey,setApiKey]=useState("");
  const [model,setModel]=useState(DEFAULT_MODEL);
+ const [provider,setProvider]=useState("openai");
+ const [baseUrl,setBaseUrl]=useState(PROVIDER_DEFAULTS.openai.baseUrl);
  const [hasKey,setHasKey]=useState(false);
  const [testingAI,setTestingAI]=useState(false);
  const [owner,setOwner]=useState("");
@@ -31,12 +35,12 @@ export default function SettingsScreen({onBack,theme="dark"}){
  useEffect(()=>{
   let mounted=true;
   Promise.all([
-   SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),
+   SecureStore.getItemAsync(API_KEY),SecureStore.getItemAsync(MODEL_KEY),SecureStore.getItemAsync(PROVIDER_KEY),SecureStore.getItemAsync(BASE_URL_KEY),
    SecureStore.getItemAsync(GITHUB_SETTING_KEYS.token),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.owner),
    SecureStore.getItemAsync(GITHUB_SETTING_KEYS.repo),SecureStore.getItemAsync(GITHUB_SETTING_KEYS.branch),
-   ]).then(([key,selectedModel,token,savedOwner,savedRepo,savedBranch])=>{
+   ]).then(([key,selectedModel,savedProvider,savedBaseUrl,token,savedOwner,savedRepo,savedBranch])=>{
    if(!mounted)return;
-   setHasKey(Boolean(key));setModel(selectedModel||DEFAULT_MODEL);setHasGhToken(Boolean(token));
+   setHasKey(Boolean(key));const selectedProvider=savedProvider||"openai";setProvider(selectedProvider);setModel(selectedModel||PROVIDER_DEFAULTS[selectedProvider]?.model||DEFAULT_MODEL);setBaseUrl(savedBaseUrl||PROVIDER_DEFAULTS[selectedProvider]?.baseUrl||"");setHasGhToken(Boolean(token));
    setOwner(savedOwner||"");setRepo(savedRepo||"");setBranch(savedBranch||"main");
   }).catch(()=>{if(mounted)setMessage("Could not load saved settings.");});
   return()=>{mounted=false;};
@@ -44,12 +48,13 @@ export default function SettingsScreen({onBack,theme="dark"}){
 
  async function save(){
   const key=apiKey.trim(),selectedModel=model.trim();
-  if(key&&!key.startsWith("sk-")){setMessage("This build accepts OpenAI API keys only (they start with sk-). Gemini keys are not supported yet.");return;}
-  if(!key&&!hasKey){setMessage("Paste your OpenAI API key before saving.");return;}
+   if(!key&&!hasKey){setMessage("Paste your selected provider API key before saving.");return;}
   if(!selectedModel||selectedModel.length>80){setMessage("Enter a valid model name.");return;}
   setSaving(true);setMessage("");
   try{
    if(key)await SecureStore.setItemAsync(API_KEY,key);
+   await SecureStore.setItemAsync(PROVIDER_KEY,provider);
+   await SecureStore.setItemAsync(BASE_URL_KEY,baseUrl.trim());
    await SecureStore.setItemAsync(MODEL_KEY,selectedModel);
    if(owner.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.owner,owner.trim());
    if(repo.trim())await SecureStore.setItemAsync(GITHUB_SETTING_KEYS.repo,repo.trim());
@@ -63,8 +68,8 @@ export default function SettingsScreen({onBack,theme="dark"}){
   setTestingAI(true);setMessage("");
   try{
    const key=apiKey.trim()||await SecureStore.getItemAsync(API_KEY);
-   const result=await testOpenAIConnection({apiKey:key,model});
-   setMessage("AI is connected · "+result.model+" · "+result.response);
+   const result=await testProviderConnection({provider,apiKey:key,model,baseUrl});
+   setMessage("AI connected · "+provider+" · "+result.model+" · "+result.response);
   }catch(error){setMessage(error.message||"AI connection test failed.");}
   finally{setTestingAI(false);}
  }
@@ -137,7 +142,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
  }
 
  async function clearAI(){
-  try{await SecureStore.deleteItemAsync(API_KEY);setHasKey(false);setApiKey("");setMessage("Saved API key removed from this phone.");}
+  try{await Promise.all([SecureStore.deleteItemAsync(API_KEY),SecureStore.deleteItemAsync(PROVIDER_KEY),SecureStore.deleteItemAsync(BASE_URL_KEY),SecureStore.deleteItemAsync(MODEL_KEY)]);setHasKey(false);setApiKey("");setProvider("openai");setBaseUrl(PROVIDER_DEFAULTS.openai.baseUrl);setModel(DEFAULT_MODEL);setMessage("Saved AI settings removed from this phone.");}
   catch{setMessage("Could not remove the API key.");}
  }
  async function clearGitHub(){
@@ -152,7 +157,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
   <Pressable onPress={onBack}><Text style={styles.back}>‹  Back</Text></Pressable>
   <Text style={styles.eyebrow}>MY AI AGENT</Text>
   <Text style={styles.title}>Settings</Text>
-  <Text style={styles.description}>Add your own OpenAI API key to use AI. Your key stays in this phone's secure storage. Every user can use their own key; no Legend AI account or server is required.</Text>
+  <Text style={styles.description}>Choose an AI provider and add your own API key. Keys stay in this phone secure storage. API credits are separate from ChatGPT subscriptions.</Text>
 
   <Text style={styles.section}>PROFILE & PRIVACY</Text>
   <View style={{backgroundColor:theme==="light"?"#E9EFF9":"#131f32",borderRadius:12,padding:13}}>
@@ -162,9 +167,14 @@ export default function SettingsScreen({onBack,theme="dark"}){
   <Text style={styles.section}>LANGUAGE</Text>
   <Text style={styles.hint}>The current interface uses English with some Hindi guidance. In-app language switching is not implemented yet.</Text>
   <Text style={styles.section}>AI PROVIDER</Text>
-  <Text style={styles.label}>OPENAI API KEY</Text>
-  <TextInput value={apiKey} onChangeText={setApiKey} placeholder={hasKey?"Saved securely · enter a new key to replace":"Paste your API key"} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
-  <Text style={styles.hint}>{hasKey?"An API key is saved on this phone.":"You need your own OpenAI API billing/credits to use AI."}</Text>
+  <Text style={styles.label}>AI PROVIDER</Text>
+  <View style={{flexDirection:"row",flexWrap:"wrap",gap:7,marginTop:8}}>
+   {["openai","gemini","groq","openrouter","custom"].map(item=><Pressable key={item} onPress={()=>{setProvider(item);setModel(PROVIDER_DEFAULTS[item].model);setBaseUrl(PROVIDER_DEFAULTS[item].baseUrl);setMessage("");}} style={{paddingVertical:9,paddingHorizontal:12,borderRadius:9,backgroundColor:provider===item?(theme==="light"?"#4267e8":"#526a9c"):(theme==="light"?"#E9EFF9":"#172640")}}><Text style={{color:provider===item?"#fff":(theme==="light"?"#17233B":"#f4f7ff"),fontWeight:"800",fontSize:11}}>{item==="custom"?"Custom URL":item[0].toUpperCase()+item.slice(1)}</Text></Pressable>)}
+  </View>
+  <Text style={styles.label}>API KEY</Text>
+  <TextInput value={apiKey} onChangeText={setApiKey} placeholder={hasKey?"Saved securely · enter a new key to replace":"Paste "+provider+" API key"} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} secureTextEntry style={styles.input}/>
+  <Text style={styles.hint}>{hasKey?"An API key is saved on this phone.":"You need your own provider API billing/credits to use AI."}</Text>
+  {provider==="custom"||provider==="openai"||provider==="groq"||provider==="openrouter"?<><Text style={styles.label}>API BASE URL</Text><TextInput value={baseUrl} onChangeText={setBaseUrl} placeholder="https://your-provider.example/v1" placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/></>:null}
   <Text style={styles.label}>MODEL</Text>
   <TextInput value={model} onChangeText={setModel} placeholder={DEFAULT_MODEL} placeholderTextColor="#78839a" autoCapitalize="none" autoCorrect={false} style={styles.input}/>
   <Pressable onPress={testAI} disabled={testingAI} style={[styles.secondary,testingAI&&styles.disabled]}>{testingAI?<ActivityIndicator color="#c3d0f2"/>:<Text style={styles.secondaryText}>Test AI connection</Text>}</Pressable>
@@ -195,7 +205,7 @@ export default function SettingsScreen({onBack,theme="dark"}){
    {hasGhToken?<Pressable onPress={clearGitHub} style={styles.clear}><Text style={styles.clearText}>Disconnect GitHub</Text></Pressable>:null}
   </>:null}
   {message?<Text style={styles.message}>{message}</Text>:null}
-  <Text style={styles.warning}>AI usage may cost money through your provider. Never share your API key with anyone or commit it to GitHub.</Text>
+  <Text style={styles.warning}>AI usage may cost money through your provider. Gemini has its own API format; Groq, OpenRouter and Custom use OpenAI-compatible Chat Completions. Project file approval tools currently work only with OpenAI. Never share or commit API keys.</Text>
  </ScrollView>;
 }
 
